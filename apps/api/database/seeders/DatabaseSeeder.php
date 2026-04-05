@@ -90,7 +90,10 @@ final class DatabaseSeeder extends Seeder
             ]
         );
 
-        if (app()->environment(['local', 'development'])) {
+        $shouldSeedDemo = app()->environment(['local', 'development'])
+            || filter_var((string) env('SEED_DEMO', 'false'), FILTER_VALIDATE_BOOL);
+
+        if ($shouldSeedDemo) {
             $this->call(AnalyticsDemoSeeder::class);
         }
     }
