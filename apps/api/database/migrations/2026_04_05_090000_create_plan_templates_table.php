@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('gym_id')->constrained('gyms')->cascadeOnDelete();
             $table->string('type');
             $table->string('name', 120);
-            $table->longText('content')->default('');
+            $table->longText('content');
             $table->foreignId('created_by_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
@@ -28,4 +28,3 @@ return new class extends Migration
         Schema::dropIfExists('plan_templates');
     }
 };
-

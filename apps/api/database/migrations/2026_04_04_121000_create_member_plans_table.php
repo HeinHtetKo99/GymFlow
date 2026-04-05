@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreignId('member_id')->constrained('members')->cascadeOnDelete();
             $table->foreignId('created_by_trainer_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('type');
-            $table->longText('content')->default('');
+            $table->longText('content');
             $table->timestamps();
 
             $table->unique(['gym_id', 'member_id', 'type']);
@@ -27,4 +27,3 @@ return new class extends Migration
         Schema::dropIfExists('member_plans');
     }
 };
-
