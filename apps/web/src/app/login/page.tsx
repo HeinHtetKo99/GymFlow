@@ -6,7 +6,6 @@ import { useMemo, useState } from "react";
 import { Activity, Dumbbell, ShieldCheck, Sparkles } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { getGymCode, setGymCode, setToken, setUser, type AuthUser } from "@/lib/auth";
-import { DEFAULT_GYM_CODE } from "@/lib/config";
 import { buttonClassName } from "@/components/ui/button-classes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,9 +17,9 @@ type LoginResponse = {
 
 export default function LoginPage() {
   const router = useRouter();
-  const [gymCode, setGymCodeState] = useState(() => getGymCode() ?? DEFAULT_GYM_CODE);
-  const [email, setEmail] = useState("owner@gymflow.test");
-  const [password, setPassword] = useState("password");
+  const [gymCode, setGymCodeState] = useState(() => getGymCode() ?? "");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,11 +38,12 @@ export default function LoginPage() {
     setError(null);
     try {
       const trimmedGym = gymCode.trim();
+      const trimmedEmail = email.trim();
       setGymCode(trimmedGym);
       const res = await apiFetch<LoginResponse>("/api/v1/auth/login", {
         method: "POST",
         gymCode: trimmedGym,
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: trimmedEmail, password }),
       });
       setToken(res.token);
       setUser(res.user);
@@ -116,7 +116,7 @@ export default function LoginPage() {
                 <div>
                   <h1 className="text-2xl font-semibold tracking-tight">Login</h1>
                   <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                    Demo credentials are prefilled. Enter your gym code to access your gym.
+                    Enter your gym code and credentials to access your gym.
                   </p>
                 </div>
                 <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-600 text-white md:hidden">
@@ -124,15 +124,16 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <form className="mt-6 space-y-4" onSubmit={onSubmit}>
+              <form className="mt-6 space-y-4" onSubmit={onSubmit} autoComplete="off">
                 <label className="block">
                   <div className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
                     Gym code
                   </div>
                   <Input
                     className="mt-2"
+                    value={gymCode}
                     onChange={(e) => setGymCodeState(e.target.value)}
-                    autoComplete="organization"
+                    autoComplete="off"
                     placeholder="enter your gym name"
                   />
                   <div className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
@@ -146,8 +147,9 @@ export default function LoginPage() {
                   </div>
                   <Input
                     className="mt-2"
+                    value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    autoComplete="email"
+                    autoComplete="off"
                     placeholder="enter your email"
                   />
                 </label>
@@ -158,8 +160,9 @@ export default function LoginPage() {
                   </div>
                   <Input
                     className="mt-2"
+                    value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    autoComplete="current-password"
+                    autoComplete="off"
                     type="password"
                     placeholder="enter password"
                   />

@@ -133,7 +133,7 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              <form className="mt-6 space-y-4" onSubmit={onSubmit}>
+              <form className="mt-6 space-y-4" onSubmit={onSubmit} autoComplete="off">
                 <label className="block">
                   <div className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
                     Gym name
@@ -142,7 +142,7 @@ export default function RegisterPage() {
                     className="mt-2"
                     value={gymName}
                     onChange={(e) => setGymName(e.target.value)}
-                    autoComplete="organization"
+                    autoComplete="off"
                     placeholder="e.g. Atlas Fitness"
                   />
                 </label>
@@ -173,7 +173,7 @@ export default function RegisterPage() {
                       className="mt-2"
                       value={ownerName}
                       onChange={(e) => setOwnerName(e.target.value)}
-                      autoComplete="name"
+                      autoComplete="off"
                       placeholder="enter your name"
                     />
                   </label>
@@ -186,7 +186,7 @@ export default function RegisterPage() {
                       className="mt-2"
                       value={ownerEmail}
                       onChange={(e) => setOwnerEmail(e.target.value)}
-                      autoComplete="email"
+                      autoComplete="off"
                       placeholder="enter your email"
                     />
                   </label>
