@@ -131,10 +131,9 @@ export default function LoginPage() {
                   </div>
                   <Input
                     className="mt-2"
-                    value={gymCode}
                     onChange={(e) => setGymCodeState(e.target.value)}
                     autoComplete="organization"
-                    placeholder="gymflow"
+                    placeholder="enter your gym name"
                   />
                   <div className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
                     Ask your owner for the gym code (example: gymflow, atlas-fitness)
@@ -147,9 +146,9 @@ export default function LoginPage() {
                   </div>
                   <Input
                     className="mt-2"
-                    value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     autoComplete="email"
+                    placeholder="enter your email"
                   />
                 </label>
 
@@ -159,10 +158,10 @@ export default function LoginPage() {
                   </div>
                   <Input
                     className="mt-2"
-                    value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     autoComplete="current-password"
                     type="password"
+                    placeholder="enter password"
                   />
                 </label>
 

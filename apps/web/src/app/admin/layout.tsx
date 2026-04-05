@@ -3,7 +3,15 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { CalendarCheck, CreditCard, LayoutDashboard, Sparkles, UserCog, Users } from "lucide-react";
+import {
+  BarChart3,
+  CalendarCheck,
+  CreditCard,
+  LayoutDashboard,
+  Sparkles,
+  UserCog,
+  Users,
+} from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { getToken, getUser, logoutLocal, type AuthUser } from "@/lib/auth";
 import { HeaderBar } from "@/components/shell/header-bar";
@@ -93,6 +101,7 @@ export default function AdminLayout({
 
     if (isOwner) {
       items.push({ href: "/admin/onboarding", label: "Setup", Icon: Sparkles });
+      items.push({ href: "/admin/analytics", label: "Analytics", Icon: BarChart3 });
     }
 
     if (canBilling) {

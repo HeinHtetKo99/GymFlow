@@ -1,0 +1,11 @@
+[phases.setup]
+cmds = [
+  "composer install --no-dev --optimize-autoloader --no-interaction",
+  "php artisan config:clear",
+  "php artisan route:clear",
+  "php artisan view:clear"
+]
+
+[start]
+cmd = "sh -lc 'php -S 0.0.0.0:${PORT} -t public server.php'"
+

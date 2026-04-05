@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { getToken } from "@/lib/auth";
+import { parsePlanContent } from "@/lib/plan-schema";
+import { StructuredPlanPreview } from "@/components/plans/structured-plan-preview";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -89,6 +91,18 @@ export default function MemberDashboardPage() {
   const foodPlan = useMemo(() => {
     return plans.find((p) => p.type === "food") ?? null;
   }, [plans]);
+
+  const workoutParsed = useMemo(() => {
+    const raw = workoutPlan?.content ?? "";
+    if (!raw.trim()) return null;
+    return parsePlanContent(raw, "workout");
+  }, [workoutPlan?.content]);
+
+  const foodParsed = useMemo(() => {
+    const raw = foodPlan?.content ?? "";
+    if (!raw.trim()) return null;
+    return parsePlanContent(raw, "food");
+  }, [foodPlan?.content]);
 
   function formatDateTime(value: string | null) {
     if (!value) return "—";
@@ -447,8 +461,16 @@ export default function MemberDashboardPage() {
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           <div className="rounded-2xl border border-black/10 bg-zinc-50 p-4 dark:border-white/10 dark:bg-white/5">
             <div className="text-sm font-semibold">Workout Plan</div>
-            <div className="mt-2 whitespace-pre-wrap text-sm text-zinc-700 dark:text-zinc-200">
-              {workoutPlan?.content?.trim() ? workoutPlan.content : "No workout plan yet."}
+            <div className="mt-2 text-sm text-zinc-700 dark:text-zinc-200">
+              {workoutParsed ? (
+                workoutParsed.kind === "structured" ? (
+                  <StructuredPlanPreview plan={workoutParsed.plan} />
+                ) : (
+                  <div className="whitespace-pre-wrap">{workoutParsed.text}</div>
+                )
+              ) : (
+                <div className="whitespace-pre-wrap">No workout plan yet.</div>
+              )}
             </div>
             {workoutPlan?.updated_at ? (
               <div className="mt-3 text-xs text-zinc-600 dark:text-zinc-400">
@@ -459,8 +481,16 @@ export default function MemberDashboardPage() {
 
           <div className="rounded-2xl border border-black/10 bg-zinc-50 p-4 dark:border-white/10 dark:bg-white/5">
             <div className="text-sm font-semibold">Food Plan</div>
-            <div className="mt-2 whitespace-pre-wrap text-sm text-zinc-700 dark:text-zinc-200">
-              {foodPlan?.content?.trim() ? foodPlan.content : "No food plan yet."}
+            <div className="mt-2 text-sm text-zinc-700 dark:text-zinc-200">
+              {foodParsed ? (
+                foodParsed.kind === "structured" ? (
+                  <StructuredPlanPreview plan={foodParsed.plan} />
+                ) : (
+                  <div className="whitespace-pre-wrap">{foodParsed.text}</div>
+                )
+              ) : (
+                <div className="whitespace-pre-wrap">No food plan yet.</div>
+              )}
             </div>
             {foodPlan?.updated_at ? (
               <div className="mt-3 text-xs text-zinc-600 dark:text-zinc-400">

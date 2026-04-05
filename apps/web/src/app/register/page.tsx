@@ -174,6 +174,7 @@ export default function RegisterPage() {
                       value={ownerName}
                       onChange={(e) => setOwnerName(e.target.value)}
                       autoComplete="name"
+                      placeholder="enter your name"
                     />
                   </label>
 
@@ -186,6 +187,7 @@ export default function RegisterPage() {
                       value={ownerEmail}
                       onChange={(e) => setOwnerEmail(e.target.value)}
                       autoComplete="email"
+                      placeholder="enter your email"
                     />
                   </label>
                 </div>
@@ -200,6 +202,7 @@ export default function RegisterPage() {
                     onChange={(e) => setOwnerPassword(e.target.value)}
                     autoComplete="new-password"
                     type="password"
+                    placeholder="enter password"
                   />
                 </label>
 

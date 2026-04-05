@@ -137,6 +137,11 @@ export default function AdminDashboardPage() {
     return attendance.filter((a) => a.checked_out_at === null);
   }, [attendance]);
 
+  const isCheckInBlocked = useMemo(() => {
+    if (checkInMemberId === "") return false;
+    return openAttendances.some((a) => a.member_id === checkInMemberId);
+  }, [checkInMemberId, openAttendances]);
+
   const lastPaymentsTotalCents = useMemo(() => {
     return payments.slice(0, 20).reduce((sum, p) => sum + (p.amount_cents ?? 0), 0);
   }, [payments]);
@@ -422,11 +427,16 @@ export default function AdminDashboardPage() {
                       className="sm:w-auto"
                       type="button"
                       onClick={() => void doCheckIn()}
-                      disabled={checkInMemberId === ""}
+                      disabled={checkInMemberId === "" || isCheckInBlocked}
                     >
                       Check-in
                     </Button>
                   </div>
+                  {isCheckInBlocked ? (
+                    <div className="mt-2 text-xs text-amber-700 dark:text-amber-200">
+                      This member already has an open check-in. Check-out first.
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="rounded-2xl border border-black/10 bg-zinc-50 p-4 dark:border-white/10 dark:bg-white/5">
