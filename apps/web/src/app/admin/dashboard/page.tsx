@@ -385,14 +385,16 @@ export default function AdminDashboardPage() {
               </div>
             ) : null}
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={gym?.permissions.can_update ? "success" : "neutral"}>
-              Update gym: {gym?.permissions.can_update ? "yes" : "no"}
-            </Badge>
-            <Badge variant={gym?.permissions.can_manage_billing ? "success" : "neutral"}>
-              Billing: {gym?.permissions.can_manage_billing ? "yes" : "no"}
-            </Badge>
-          </div>
+          {isOwner ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={gym?.permissions.can_update ? "success" : "neutral"}>
+                Gym settings
+              </Badge>
+              <Badge variant={gym?.permissions.can_manage_billing ? "success" : "neutral"}>
+                Retention settings
+              </Badge>
+            </div>
+          ) : null}
         </div>
       </section>
 
@@ -694,9 +696,8 @@ export default function AdminDashboardPage() {
               {members.length}
             </div>
           </div>
-          <div className="mt-4 overflow-hidden rounded-xl border border-black/10 dark:border-white/10">
-            <div className="max-h-80 overflow-auto">
-              <table className="min-w-full text-sm">
+          <div className="mt-4 max-h-80 overflow-auto rounded-xl border border-black/10 dark:border-white/10">
+            <table className="min-w-[520px] text-sm">
                 <thead className="sticky top-0 bg-zinc-50 text-left text-xs text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
                   <tr>
                     <th className="px-3 py-2 font-medium">Name</th>
@@ -707,7 +708,9 @@ export default function AdminDashboardPage() {
                 <tbody className="divide-y divide-black/10 dark:divide-white/10">
                   {members.slice(0, 15).map((m) => (
                     <tr key={m.id} className="hover:bg-zinc-50/80 dark:hover:bg-white/5">
-                      <td className="px-3 py-2 font-medium">{m.name}</td>
+                      <td className="px-3 py-2 font-medium">
+                        <div className="max-w-40 truncate sm:max-w-64">{m.name}</div>
+                      </td>
                       <td className="px-3 py-2">
                         {m.membership ? (
                           <div className="min-w-0">
@@ -775,8 +778,7 @@ export default function AdminDashboardPage() {
                     </tr>
                   ) : null}
                 </tbody>
-              </table>
-            </div>
+            </table>
           </div>
         </div>
 
@@ -787,9 +789,8 @@ export default function AdminDashboardPage() {
               Open {openAttendances.length}
             </div>
           </div>
-          <div className="mt-4 overflow-hidden rounded-xl border border-black/10 dark:border-white/10">
-            <div className="max-h-80 overflow-auto">
-              <table className="min-w-full text-sm">
+          <div className="mt-4 max-h-80 overflow-auto rounded-xl border border-black/10 dark:border-white/10">
+            <table className="min-w-[520px] text-sm">
                 <thead className="sticky top-0 bg-zinc-50 text-left text-xs text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
                   <tr>
                     <th className="px-3 py-2 font-medium">Member</th>
@@ -802,7 +803,9 @@ export default function AdminDashboardPage() {
                   {attendance.slice(0, 15).map((a) => (
                     <tr key={a.id} className="hover:bg-zinc-50/80 dark:hover:bg-white/5">
                       <td className="px-3 py-2 font-medium">
-                        {a.member?.name ?? `Member #${a.member_id}`}
+                        <div className="max-w-40 truncate sm:max-w-64">
+                          {a.member?.name ?? `Member #${a.member_id}`}
+                        </div>
                       </td>
                       <td className="px-3 py-2 text-zinc-600 dark:text-zinc-400">
                         {formatDateTime(a.checked_in_at)}
@@ -836,8 +839,7 @@ export default function AdminDashboardPage() {
                     </tr>
                   ) : null}
                 </tbody>
-              </table>
-            </div>
+            </table>
           </div>
         </div>
 
@@ -848,9 +850,8 @@ export default function AdminDashboardPage() {
               {payments.length}
             </div>
           </div>
-          <div className="mt-4 overflow-hidden rounded-xl border border-black/10 dark:border-white/10">
-            <div className="max-h-80 overflow-auto">
-              <table className="min-w-full text-sm">
+          <div className="mt-4 max-h-80 overflow-auto rounded-xl border border-black/10 dark:border-white/10">
+            <table className="min-w-[560px] text-sm">
                 <thead className="sticky top-0 bg-zinc-50 text-left text-xs text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
                   <tr>
                     <th className="px-3 py-2 font-medium">Member</th>
@@ -864,13 +865,17 @@ export default function AdminDashboardPage() {
                   {payments.slice(0, 15).map((p) => (
                     <tr key={p.id} className="hover:bg-zinc-50/80 dark:hover:bg-white/5">
                       <td className="px-3 py-2 font-medium">
-                        {p.member?.name ?? `Member #${p.member_id}`}
+                        <div className="max-w-40 truncate sm:max-w-64">
+                          {p.member?.name ?? `Member #${p.member_id}`}
+                        </div>
                       </td>
                       <td className="px-3 py-2">
                         {formatMoney(p.amount_cents, p.currency)}
                       </td>
                       <td className="px-3 py-2 text-zinc-600 dark:text-zinc-400">
-                        {p.method}
+                        <div className="max-w-32 truncate sm:max-w-48">
+                          {p.method.replaceAll("_", " ")}
+                        </div>
                       </td>
                       <td className="px-3 py-2">
                         <Badge variant={p.status === "paid" ? "success" : "warning"}>
@@ -902,8 +907,7 @@ export default function AdminDashboardPage() {
                     </tr>
                   ) : null}
                 </tbody>
-              </table>
-            </div>
+            </table>
           </div>
           <div className="mt-3 text-xs text-zinc-600 dark:text-zinc-400">
             Bank transfers: put transaction id in Reference when recording.

@@ -20,9 +20,9 @@
 **/bootstrap/cache/**
 
 # Env files
-**/.env
 **/.env.*.local
 
 # IDE
 **/.idea/
 **/.vscode/
+config.bat
