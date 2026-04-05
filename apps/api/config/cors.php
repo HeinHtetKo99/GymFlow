@@ -10,7 +10,7 @@ return [
     'allowed_origins_patterns' => array_values(array_filter(array_map(
         fn ($v) => is_string($v) ? trim($v) : '',
         array_merge(
-            ['^https://.*\\.vercel\\.app$'],
+            ['#^https://.*\\.vercel\\.app$#'],
             explode(',', (string) env('FRONTEND_URL_PATTERNS', ''))
         )
     ))),
