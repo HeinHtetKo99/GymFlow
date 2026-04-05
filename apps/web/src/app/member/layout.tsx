@@ -44,6 +44,7 @@ export default function MemberLayout({
         user={user ? { name: user.name, email: user.email } : null}
         badges={user ? [{ label: `Role: ${roleLabel(user.role)}` }] : []}
         onLogout={onLogout}
+        logoHref="/member"
         maxWidth="max-w-5xl"
       />
       <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-8">

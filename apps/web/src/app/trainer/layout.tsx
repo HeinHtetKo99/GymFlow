@@ -44,6 +44,7 @@ export default function TrainerLayout({
         user={user ? { name: user.name, email: user.email } : null}
         badges={user ? [{ label: `Role: ${roleLabel(user.role)}` }] : []}
         onLogout={onLogout}
+        logoHref="/trainer"
         maxWidth="max-w-7xl"
       />
 
