@@ -9,12 +9,14 @@ use App\Models\Member;
 use App\Models\MembershipPlan;
 use App\Models\Membership;
 use App\Models\Payment;
+use App\Models\PlanTemplate;
 use App\Policies\AttendancePolicy;
 use App\Policies\GymPolicy;
 use App\Policies\MemberPolicy;
 use App\Policies\MembershipPlanPolicy;
 use App\Policies\MembershipPolicy;
 use App\Policies\PaymentPolicy;
+use App\Policies\PlanTemplatePolicy;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 
@@ -33,5 +35,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(MembershipPlan::class, MembershipPlanPolicy::class);
         Gate::policy(Membership::class, MembershipPolicy::class);
         Gate::policy(Payment::class, PaymentPolicy::class);
+        Gate::policy(PlanTemplate::class, PlanTemplatePolicy::class);
     }
 }

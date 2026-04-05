@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Member\StoreMemberRequest;
 use App\Http\Requests\Api\V1\Member\UpdateMemberRequest;
 use App\Http\Requests\Api\V1\Member\UpdateMyMemberRequest;
 use App\Models\Member;
+use App\Models\MemberPlan;
 use App\Models\Membership;
 use App\Models\User;
 use App\Support\TenantContext;
@@ -24,8 +26,17 @@ final class MemberController extends Controller
             return response()->json(['message' => 'Tenant not resolved.'], 500);
         }
 
-        $members = Member::query()
-            ->where('gym_id', $gymId)
+        $assignedTrainer = request()->query('assigned_trainer');
+        $actor = request()->user();
+
+        $query = Member::query()
+            ->where('gym_id', $gymId);
+
+        if (is_string($assignedTrainer) && strtolower(trim($assignedTrainer)) === 'me' && $actor !== null && $actor->role === UserRole::Trainer) {
+            $query->where('assigned_trainer_user_id', $actor->getKey());
+        }
+
+        $members = $query
             ->latest('id')
             ->get(['id', 'user_id', 'name', 'email', 'phone', 'status', 'assigned_trainer_user_id', 'created_at']);
 
@@ -120,8 +131,18 @@ final class MemberController extends Controller
 
         Gate::authorize('update', $member);
 
+        $prevTrainerId = $member->assigned_trainer_user_id;
+
         $member->fill($request->validated());
         $member->save();
+
+        $nextTrainerId = $member->assigned_trainer_user_id;
+        if ((int) ($prevTrainerId ?? 0) !== (int) ($nextTrainerId ?? 0)) {
+            MemberPlan::query()
+                ->where('gym_id', $gymId)
+                ->where('member_id', $member->getKey())
+                ->delete();
+        }
 
         return response()->json([
             'data' => $member,
@@ -231,8 +252,18 @@ final class MemberController extends Controller
 
         Gate::authorize('assignTrainer', $member);
 
+        $prevTrainerId = $member->assigned_trainer_user_id;
+
         $member->fill($request->validated());
         $member->save();
+
+        $nextTrainerId = $member->assigned_trainer_user_id;
+        if ((int) ($prevTrainerId ?? 0) !== (int) ($nextTrainerId ?? 0)) {
+            MemberPlan::query()
+                ->where('gym_id', $gymId)
+                ->where('member_id', $member->getKey())
+                ->delete();
+        }
 
         return response()->json([
             'data' => $member,

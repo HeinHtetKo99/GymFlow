@@ -15,6 +15,8 @@ use App\Http\Controllers\Api\V1\MemberPlanController;
 use App\Http\Controllers\Api\V1\MembershipPlanController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\UserController;
+use App\Http\Controllers\Api\V1\AnalyticsController;
+use App\Http\Controllers\Api\V1\PlanTemplateController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -73,6 +75,13 @@ Route::prefix('v1')->group(function () {
             Route::get('/payments/me', [PaymentController::class, 'me']);
             Route::get('/payments/{id}', [PaymentController::class, 'show']);
             Route::post('/payments/{id}/void', [PaymentController::class, 'void']);
+
+            Route::get('/analytics/overview', [AnalyticsController::class, 'overview']);
+
+            Route::get('/plan-templates', [PlanTemplateController::class, 'index']);
+            Route::post('/plan-templates', [PlanTemplateController::class, 'store']);
+            Route::patch('/plan-templates/{id}', [PlanTemplateController::class, 'update']);
+            Route::delete('/plan-templates/{id}', [PlanTemplateController::class, 'destroy']);
 
             Route::get('/users', [UserController::class, 'index']);
             Route::post('/users', [UserController::class, 'store']);

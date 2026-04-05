@@ -19,8 +19,13 @@ final class MemberPlanPolicy
             return true;
         }
 
-        if ($user->role === UserRole::Owner || $user->role === UserRole::Cashier || $user->role === UserRole::Trainer) {
+        if ($user->role === UserRole::Owner || $user->role === UserRole::Cashier) {
             return true;
+        }
+
+        if ($user->role === UserRole::Trainer) {
+            return $member->assigned_trainer_user_id !== null
+                && (int) $member->assigned_trainer_user_id === (int) $user->getKey();
         }
 
         $gym = $user->gym;
@@ -34,8 +39,13 @@ final class MemberPlanPolicy
             return false;
         }
 
-        if ($user->role === UserRole::Owner || $user->role === UserRole::Trainer) {
+        if ($user->role === UserRole::Owner) {
             return true;
+        }
+
+        if ($user->role === UserRole::Trainer) {
+            return $member->assigned_trainer_user_id !== null
+                && (int) $member->assigned_trainer_user_id === (int) $user->getKey();
         }
 
         $gym = $user->gym;

@@ -8,6 +8,7 @@ use App\Http\Requests\Api\V1\Attendance\CheckOutRequest;
 use App\Models\Attendance;
 use App\Models\Member;
 use App\Support\TenantContext;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 final class AttendanceController extends Controller
@@ -62,15 +63,40 @@ final class AttendanceController extends Controller
             return response()->json(['message' => 'Member not found.'], 404);
         }
 
-        $attendance = Attendance::query()->create([
-            'gym_id' => $gymId,
-            'member_id' => $member->getKey(),
-            'checked_in_by_user_id' => request()->user()?->getKey(),
-            'checked_in_at' => $request->validated('checked_in_at', now()),
-        ]);
+        $checkedInAt = $request->validated('checked_in_at', now());
+
+        $result = DB::transaction(function () use ($gymId, $member, $checkedInAt) {
+            $existing = Attendance::query()
+                ->where('gym_id', $gymId)
+                ->where('member_id', $member->getKey())
+                ->whereNull('checked_out_at')
+                ->lockForUpdate()
+                ->first();
+
+            if ($existing !== null) {
+                return ['already_checked_in' => true, 'attendance' => $existing];
+            }
+
+            $attendance = Attendance::query()->create([
+                'gym_id' => $gymId,
+                'member_id' => $member->getKey(),
+                'checked_in_by_user_id' => request()->user()?->getKey(),
+                'checked_in_at' => $checkedInAt,
+            ]);
+
+            return ['already_checked_in' => false, 'attendance' => $attendance];
+        });
+
+        /** @var array{already_checked_in: bool, attendance: Attendance} $result */
+        if ($result['already_checked_in']) {
+            return response()->json([
+                'message' => 'Member is already checked in.',
+                'data' => $result['attendance'],
+            ], 422);
+        }
 
         return response()->json([
-            'data' => $attendance,
+            'data' => $result['attendance'],
         ], 201);
     }
 

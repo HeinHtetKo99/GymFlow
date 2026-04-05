@@ -84,9 +84,14 @@ final class DatabaseSeeder extends Seeder
                 'gym_id' => $gym->getKey(),
                 'name' => $testUser->name,
                 'email' => $testUser->email,
+                'phone' => '+1 555-0000',
                 'status' => 'active',
                 'assigned_trainer_user_id' => $trainer->getKey(),
             ]
         );
+
+        if (app()->environment(['local', 'development'])) {
+            $this->call(AnalyticsDemoSeeder::class);
+        }
     }
 }
