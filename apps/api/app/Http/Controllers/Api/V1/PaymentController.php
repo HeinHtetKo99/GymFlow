@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\MembershipTier;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Payment\StorePaymentRequest;
 use App\Models\Member;
 use App\Models\Membership;
 use App\Models\MembershipPlan;
 use App\Models\Payment;
+use App\Models\User;
+use App\Support\MembershipBilling;
+use App\Support\PersonalTrainingAccess;
 use App\Support\TenantContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -66,38 +70,47 @@ final class PaymentController extends Controller
 
         $membershipPlanId = $request->validated('membership_plan_id');
 
-        $plan = null;
-
-        if ($membershipPlanId !== null) {
-            $plan = MembershipPlan::query()
-                ->where('gym_id', $gymId)
-                ->where('is_active', true)
-                ->whereKey($membershipPlanId)
-                ->first();
-
-            if ($plan === null) {
-                return response()->json(['message' => 'Membership plan not found.'], 404);
-            }
-        } else {
-            $plan = MembershipPlan::query()->updateOrCreate(
-                ['gym_id' => $gymId, 'name' => 'One-time'],
-                [
-                    'gym_id' => $gymId,
-                    'name' => 'One-time',
-                    'duration_days' => 30,
-                    'price_cents' => 0,
-                    'currency' => 'USD',
-                    'is_active' => false,
-                    'sort_order' => 0,
-                ],
-            );
+        if ($membershipPlanId === null) {
+            return response()->json(['message' => 'Membership plan is required.'], 422);
         }
 
-        [$payment, $membership] = DB::transaction(function () use ($request, $gymId, $member, $plan) {
+        $plan = MembershipPlan::query()
+            ->where('gym_id', $gymId)
+            ->where('is_active', true)
+            ->whereKey($membershipPlanId)
+            ->first();
+
+        if ($plan === null) {
+            return response()->json(['message' => 'Membership plan not found.'], 404);
+        }
+
+        $newTier = PersonalTrainingAccess::tierFromPlan($plan);
+        if (! in_array($newTier, [MembershipTier::Silver, MembershipTier::Gold], true)) {
+            return response()->json(['message' => 'Only Silver and Gold plans can be sold.'], 422);
+        }
+
+        $assignedTrainerId = $request->validated('assigned_trainer_user_id');
+        if ($assignedTrainerId !== null) {
+            if ($newTier !== MembershipTier::Gold) {
+                return response()->json(['message' => 'Trainer assignment is only available on Gold memberships.'], 422);
+            }
+
+            $trainerExists = User::query()
+                ->where('gym_id', $gymId)
+                ->where('role', 'trainer')
+                ->whereKey($assignedTrainerId)
+                ->exists();
+
+            if (! $trainerExists) {
+                return response()->json(['message' => 'Trainer not found.'], 404);
+            }
+        }
+
+        [$payment, $membership] = DB::transaction(function () use ($request, $gymId, $member, $plan, $assignedTrainerId, $newTier) {
             $payment = Payment::query()->create([
                 'gym_id' => $gymId,
                 'member_id' => $member->getKey(),
-                'membership_plan_id' => $plan?->getKey(),
+                'membership_plan_id' => $plan->getKey(),
                 'recorded_by_user_id' => request()->user()?->getKey(),
                 'amount_cents' => $request->validated('amount_cents'),
                 'currency' => strtoupper($request->validated('currency', 'USD')),
@@ -114,6 +127,7 @@ final class PaymentController extends Controller
                 ->where('gym_id', $gymId)
                 ->where('member_id', $member->getKey())
                 ->whereIn('status', ['active', 'canceling'])
+                ->with(['plan:id,name,tier'])
                 ->orderByDesc('ends_at')
                 ->first();
 
@@ -124,9 +138,19 @@ final class PaymentController extends Controller
                 ]);
             }
 
-            $startsAt = $current !== null && $current->ends_at !== null && $current->ends_at->gt($now)
-                ? $current->ends_at
-                : $now;
+            $billing = MembershipBilling::resolveMembershipStart($current, $plan, $now);
+
+            if ($billing['expire_current'] && $current !== null) {
+                $current->update([
+                    'status' => 'expired',
+                ]);
+            }
+
+            if ($billing['downgrade']) {
+                MembershipBilling::applyDowngradeSideEffects($member, $gymId);
+            }
+
+            $startsAt = $billing['starts_at'];
 
             $membership = Membership::query()->create([
                 'gym_id' => $gymId,
@@ -142,6 +166,10 @@ final class PaymentController extends Controller
                 'membership_plan_id' => $plan->getKey(),
                 'membership_id' => $membership->getKey(),
             ]);
+
+            if ($newTier === MembershipTier::Gold && $assignedTrainerId !== null) {
+                $member->update(['assigned_trainer_user_id' => $assignedTrainerId]);
+            }
 
             return [$payment, $membership];
         });

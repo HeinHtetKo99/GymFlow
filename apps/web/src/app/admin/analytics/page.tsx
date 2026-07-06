@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { getToken } from "@/lib/auth";
+import { formatMoney } from "@/lib/money";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ChartBars } from "@/components/ui/chart-bars";
@@ -57,16 +58,6 @@ function formatDateTime(value: string | null) {
     return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(d);
   } catch {
     return d.toLocaleString();
-  }
-}
-
-function formatMoney(amountCents: number, currency: string) {
-  const value = amountCents / 100;
-  if (currency === "MIXED") return `${value.toFixed(2)} (mixed)`;
-  try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(value);
-  } catch {
-    return `${value.toFixed(2)} ${currency}`;
   }
 }
 

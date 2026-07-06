@@ -67,22 +67,21 @@ final class AnalyticsDemoSeeder extends Seeder
 
         $plans = [
             MembershipPlan::query()->updateOrCreate(
-                ['gym_id' => $gym->getKey(), 'name' => 'Basic'],
-                ['tier' => 'standard', 'duration_days' => 30, 'price_cents' => 5000, 'currency' => 'USD', 'is_active' => true, 'sort_order' => 10]
-            ),
-            MembershipPlan::query()->updateOrCreate(
                 ['gym_id' => $gym->getKey(), 'name' => 'Silver'],
-                ['tier' => 'silver', 'duration_days' => 30, 'price_cents' => 8000, 'currency' => 'USD', 'is_active' => true, 'sort_order' => 20]
+                ['tier' => 'silver', 'duration_days' => 30, 'price_cents' => 45000, 'currency' => 'MMK', 'is_active' => true, 'sort_order' => 10]
             ),
             MembershipPlan::query()->updateOrCreate(
                 ['gym_id' => $gym->getKey(), 'name' => 'Gold'],
-                ['tier' => 'gold', 'duration_days' => 30, 'price_cents' => 12000, 'currency' => 'USD', 'is_active' => true, 'sort_order' => 30]
+                ['tier' => 'gold', 'duration_days' => 30, 'price_cents' => 200000, 'currency' => 'MMK', 'is_active' => true, 'sort_order' => 20]
             ),
         ];
-        $standardPlan = $plans[0];
-        $silverPlan = $plans[1];
-        $goldPlan = $plans[2];
-        $coachingPlans = [$silverPlan, $goldPlan];
+        MembershipPlan::query()
+            ->where('gym_id', $gym->getKey())
+            ->whereNotIn('name', ['Silver', 'Gold'])
+            ->update(['is_active' => false]);
+
+        $silverPlan = $plans[0];
+        $goldPlan = $plans[1];
 
         $demoMemberEmails = [];
         for ($i = 1; $i <= 36; $i++) {
@@ -115,7 +114,7 @@ final class AnalyticsDemoSeeder extends Seeder
         $members = [];
         foreach ($demoMemberEmails as $idx => $email) {
             $n = $idx + 1;
-            $assignedTrainerId = $n <= 18 ? $trainer->getKey() : $trainer2->getKey();
+            $assignedTrainerId = null;
             $member = Member::query()->updateOrCreate(
                 ['gym_id' => $gym->getKey(), 'email' => $email],
                 [
@@ -141,6 +140,13 @@ final class AnalyticsDemoSeeder extends Seeder
             $plan = $i % 2 === 0 ? $silverPlan : $goldPlan;
             $startsAt = $now->copy()->subDays(14);
             $endsAt = $now->copy()->addDays((int) $plan->duration_days - 14);
+            if ($plan->tier === 'gold') {
+                $member->update([
+                    'assigned_trainer_user_id' => $i % 4 === 0 ? $trainer->getKey() : $trainer2->getKey(),
+                ]);
+            } else {
+                $member->update(['assigned_trainer_user_id' => null]);
+            }
             Membership::query()->create([
                 'gym_id' => $gym->getKey(),
                 'member_id' => $member->getKey(),
@@ -153,7 +159,7 @@ final class AnalyticsDemoSeeder extends Seeder
         }
 
         foreach ($expiredMembers as $i => $member) {
-            $plan = $coachingPlans[$i % count($coachingPlans)];
+            $plan = $i % 2 === 0 ? $silverPlan : $goldPlan;
             $endsAt = $now->copy()->subDays(2 + ($i % 20));
             $startsAt = $endsAt->copy()->subDays((int) $plan->duration_days);
             Membership::query()->create([
@@ -167,22 +173,29 @@ final class AnalyticsDemoSeeder extends Seeder
             ]);
         }
 
-        $months = 24;
-        $toMonth = $now->copy()->startOfMonth();
-        $fromMonth = $toMonth->copy()->subMonths($months - 1);
-
+        $months = 18;
+        $fromMonth = $now->copy()->startOfMonth()->subMonths($months - 1);
+        $paymentIndex = 0;
         for ($m = 0; $m < $months; $m++) {
             $monthStart = $fromMonth->copy()->addMonths($m);
-            $paymentsThisMonth = 6 + ($m % 6);
+            if ($monthStart->gt($now)) {
+                break;
+            }
+
+            $paymentsThisMonth = 4 + ($m % 4);
 
             for ($j = 0; $j < $paymentsThisMonth; $j++) {
                 $member = $activeMembers[($m * 13 + $j * 7) % count($activeMembers)];
-                $plan = $coachingPlans[($m + $j) % count($coachingPlans)];
-                $paidAt = $monthStart->copy()->addDays(($j * 3) % 25)->addHours(10 + ($j % 7));
+                $plan = ($m + $j) % 2 === 0 ? $silverPlan : $goldPlan;
 
-                $amount = (int) $plan->price_cents;
-                $wiggle = (($j % 5) - 2) * 250;
-                $amountCents = max(1000, $amount + $wiggle);
+                $day = min(($j * 5) % 28 + 1, $monthStart->daysInMonth);
+                $paidAt = $monthStart->copy()->day($day)->addHours(10 + ($j % 7));
+
+                if ($paidAt->gt($now)) {
+                    $paidAt = $now->copy()->subDays(($paymentIndex % 90) + 1)->subHours($j % 8);
+                }
+
+                $amountCents = (int) $plan->price_cents;
 
                 $recordedBy = $j % 2 === 0 ? $cashier : $owner;
 
@@ -193,13 +206,15 @@ final class AnalyticsDemoSeeder extends Seeder
                     'membership_id' => null,
                     'recorded_by_user_id' => $recordedBy->getKey(),
                     'amount_cents' => $amountCents,
-                    'currency' => 'USD',
+                    'currency' => 'MMK',
                     'method' => $j % 3 === 0 ? 'card' : 'cash',
                     'status' => 'paid',
                     'paid_at' => $paidAt,
                     'reference' => $j % 4 === 0 ? 'R' . Str::upper(Str::random(6)) : null,
                     'notes' => null,
                 ]);
+
+                $paymentIndex++;
             }
         }
 

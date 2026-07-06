@@ -15,9 +15,9 @@ final class PersonalTrainingTierTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_standard_member_cannot_view_plans_or_progress(): void
+    public function test_silver_member_cannot_view_plans_or_progress(): void
     {
-        [$gym, $member, $memberUser] = $this->createMemberWithTier('standard');
+        [$gym, , $memberUser] = $this->createMemberWithTier('silver');
 
         Sanctum::actingAs($memberUser);
 
@@ -30,9 +30,9 @@ final class PersonalTrainingTierTest extends TestCase
             ->assertStatus(403);
     }
 
-    public function test_silver_member_with_trainer_can_view_plans_and_progress(): void
+    public function test_gold_member_with_trainer_can_view_plans_and_progress(): void
     {
-        [$gym, $member, $memberUser, $trainer] = $this->createMemberWithTier('silver', withTrainer: true);
+        [$gym, , $memberUser, $trainer] = $this->createMemberWithTier('gold', withTrainer: true);
 
         Sanctum::actingAs($memberUser);
 
@@ -52,9 +52,9 @@ final class PersonalTrainingTierTest extends TestCase
             ->assertJsonCount(1, 'data');
     }
 
-    public function test_trainer_does_not_see_standard_member_assigned_to_them(): void
+    public function test_trainer_does_not_see_silver_member_assigned_to_them(): void
     {
-        [$gym, , , $trainer] = $this->createMemberWithTier('standard', withTrainer: true);
+        [$gym, , , $trainer] = $this->createMemberWithTier('silver', withTrainer: true);
 
         Sanctum::actingAs($trainer);
 
@@ -64,9 +64,9 @@ final class PersonalTrainingTierTest extends TestCase
             ->assertJsonCount(0, 'data');
     }
 
-    public function test_standard_member_cannot_assign_trainer(): void
+    public function test_silver_member_cannot_assign_trainer(): void
     {
-        [$gym, , $memberUser, $trainer] = $this->createMemberWithTier('standard', withTrainer: true);
+        [$gym, , $memberUser, $trainer] = $this->createMemberWithTier('silver');
 
         Sanctum::actingAs($memberUser);
 
@@ -109,8 +109,8 @@ final class PersonalTrainingTierTest extends TestCase
             'name' => ucfirst($tier),
             'tier' => $tier,
             'duration_days' => 30,
-            'price_cents' => 5000,
-            'currency' => 'USD',
+            'price_cents' => $tier === 'gold' ? 200000 : 45000,
+            'currency' => 'MMK',
             'is_active' => true,
             'sort_order' => 10,
         ]);
@@ -118,7 +118,7 @@ final class PersonalTrainingTierTest extends TestCase
         $member = Member::query()->create([
             'gym_id' => $gym->getKey(),
             'user_id' => $memberUser->getKey(),
-            'assigned_trainer_user_id' => $withTrainer ? $trainer->getKey() : null,
+            'assigned_trainer_user_id' => $withTrainer && $tier === 'gold' ? $trainer->getKey() : null,
             'name' => 'Member',
             'email' => $memberUser->email,
             'status' => 'active',
@@ -133,8 +133,6 @@ final class PersonalTrainingTierTest extends TestCase
             'status' => 'active',
         ]);
 
-        return $withTrainer
-            ? [$gym, $member, $memberUser, $trainer]
-            : [$gym, $member, $memberUser];
+        return [$gym, $member, $memberUser, $trainer];
     }
 }

@@ -235,7 +235,7 @@ export default function TrainerHomePage() {
                         <span className="truncate text-xs text-zinc-500">
                           {m.email ?? `Member #${m.id}`}
                         </span>
-                        {m.membership?.tier && m.membership.tier !== "standard" ? (
+                        {m.membership?.tier === "gold" || m.membership?.tier === "silver" ? (
                           <Badge variant={tierBadgeVariant(m.membership.tier)} className="px-1.5 py-0 text-[10px]">
                             {tierLabel(m.membership.tier)}
                           </Badge>

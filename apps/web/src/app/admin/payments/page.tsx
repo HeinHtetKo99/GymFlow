@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { getToken } from "@/lib/auth";
+import { formatMoney } from "@/lib/money";
 
 type PaymentsResponse = {
   data: Array<{
@@ -35,15 +36,6 @@ export default function AdminPaymentsPage() {
       }).format(d);
     } catch {
       return d.toLocaleString();
-    }
-  }
-
-  function formatMoney(amountCents: number, currency: string) {
-    const value = amountCents / 100;
-    try {
-      return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(value);
-    } catch {
-      return `${value.toFixed(2)} ${currency}`;
     }
   }
 

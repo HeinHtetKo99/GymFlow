@@ -73,13 +73,19 @@ final class MemberController extends Controller
             return response()->json(['message' => 'Tenant not resolved.'], 500);
         }
 
+        if ($request->filled('assigned_trainer_user_id')) {
+            return response()->json([
+                'message' => 'Assign a personal trainer when recording a Gold membership payment.',
+            ], 422);
+        }
+
         $member = Member::query()->create([
             'gym_id' => $gymId,
             'name' => $request->validated('name'),
             'email' => $request->validated('email'),
             'phone' => $request->validated('phone'),
             'status' => $request->validated('status', 'active'),
-            'assigned_trainer_user_id' => $request->validated('assigned_trainer_user_id'),
+            'assigned_trainer_user_id' => null,
         ]);
 
         return response()->json([
@@ -136,7 +142,7 @@ final class MemberController extends Controller
         if ($request->has('assigned_trainer_user_id') && $request->validated('assigned_trainer_user_id') !== null) {
             if (! PersonalTrainingAccess::hasCoachingTier($member, $gymId)) {
                 return response()->json([
-                    'message' => 'Personal trainer assignment requires an active Silver or Gold membership.',
+                    'message' => 'Personal trainer assignment requires an active Gold membership.',
                 ], 422);
             }
         }
@@ -266,7 +272,7 @@ final class MemberController extends Controller
         if ($request->has('assigned_trainer_user_id') && $request->validated('assigned_trainer_user_id') !== null) {
             if (! PersonalTrainingAccess::hasCoachingTier($member, $gymId)) {
                 return response()->json([
-                    'message' => 'Personal trainer assignment requires an active Silver or Gold membership.',
+                    'message' => 'Personal trainer assignment requires an active Gold membership.',
                 ], 422);
             }
         }

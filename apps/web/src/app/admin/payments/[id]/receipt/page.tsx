@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { getToken } from "@/lib/auth";
+import { formatMoney } from "@/lib/money";
 import { buttonClassName } from "@/components/ui/button-classes";
 import { Button } from "@/components/ui/button";
 
@@ -59,15 +60,6 @@ export default function PaymentReceiptPage() {
       }).format(d);
     } catch {
       return d.toLocaleString();
-    }
-  }
-
-  function formatMoney(amountCents: number, currency: string) {
-    const value = amountCents / 100;
-    try {
-      return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(value);
-    } catch {
-      return `${value.toFixed(2)} ${currency}`;
     }
   }
 

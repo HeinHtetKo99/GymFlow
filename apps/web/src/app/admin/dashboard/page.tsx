@@ -5,6 +5,14 @@ import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { getToken, getUser, type AuthUser } from "@/lib/auth";
 import { roleLabel } from "@/lib/roles";
+import { formatPlanLabel, sortPlansByTier } from "@/lib/membership-plans";
+import { isGoldTier, tierBadgeVariant, tierLabel } from "@/lib/membership-tier";
+import {
+  amountInputFromStored,
+  formatMoney,
+  parseMoneyInput,
+  planDescription,
+} from "@/lib/money";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { buttonClassName } from "@/components/ui/button-classes";
@@ -36,6 +44,7 @@ type MemberListResponse = {
       id: number;
       membership_plan_id: number;
       plan_name: string | null;
+      tier?: string;
       starts_at: string;
       ends_at: string;
       status: string;
@@ -81,10 +90,15 @@ type UsersListResponse = {
   }>;
 };
 
+type TrainersResponse = {
+  data: Array<{ id: number; name: string; email: string }>;
+};
+
 type MembershipPlansResponse = {
   data: Array<{
     id: number;
     name: string;
+    tier?: string;
     duration_days: number;
     price_cents: number;
     currency: string;
@@ -99,15 +113,16 @@ export default function AdminDashboardPage() {
   const [payments, setPayments] = useState<PaymentListResponse["data"]>([]);
   const [users, setUsers] = useState<UsersListResponse["data"]>([]);
   const [plans, setPlans] = useState<MembershipPlansResponse["data"]>([]);
+  const [trainers, setTrainers] = useState<TrainersResponse["data"]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [newPaymentMemberId, setNewPaymentMemberId] = useState<number | "">("");
   const [newPaymentPlanId, setNewPaymentPlanId] = useState<number | "">("");
-  const [newPaymentAmount, setNewPaymentAmount] = useState<string>("50.00");
+  const [newPaymentAmount, setNewPaymentAmount] = useState<string>("45000");
   const [newPaymentMethod, setNewPaymentMethod] = useState<string>("cash");
   const [newPaymentReference, setNewPaymentReference] = useState<string>("");
-  const [newPaymentNotes, setNewPaymentNotes] = useState<string>("");
+  const [newPaymentTrainerId, setNewPaymentTrainerId] = useState<number | "">("");
 
   const [checkInMemberId, setCheckInMemberId] = useState<number | "">("");
 
@@ -137,6 +152,13 @@ export default function AdminDashboardPage() {
     return attendance.filter((a) => a.checked_out_at === null);
   }, [attendance]);
 
+  const [newPaymentNotes, setNewPaymentNotes] = useState<string>("");
+
+  const sortedPlans = useMemo(() => sortPlansByTier(plans), [plans]);
+  const selectedPaymentPlan = sortedPlans.find((p) => p.id === newPaymentPlanId) ?? null;
+  const paymentCurrency = selectedPaymentPlan?.currency ?? "MMK";
+  const paymentIsGold = isGoldTier(selectedPaymentPlan?.tier);
+
   const isCheckInBlocked = useMemo(() => {
     if (checkInMemberId === "") return false;
     return openAttendances.some((a) => a.member_id === checkInMemberId);
@@ -145,18 +167,6 @@ export default function AdminDashboardPage() {
   const lastPaymentsTotalCents = useMemo(() => {
     return payments.slice(0, 20).reduce((sum, p) => sum + (p.amount_cents ?? 0), 0);
   }, [payments]);
-
-  function formatMoney(amountCents: number, currency: string) {
-    const value = amountCents / 100;
-    try {
-      return new Intl.NumberFormat(undefined, {
-        style: "currency",
-        currency,
-      }).format(value);
-    } catch {
-      return `${value.toFixed(2)} ${currency}`;
-    }
-  }
 
   function formatDateTime(value: string | null) {
     if (!value) return "—";
@@ -189,7 +199,7 @@ export default function AdminDashboardPage() {
       const canBillingNow = owner || u.role === "cashier";
       const needsUsers = owner;
 
-      const [attendanceRes, paymentsRes, usersRes, plansRes] = await Promise.all([
+      const [attendanceRes, paymentsRes, usersRes, plansRes, trainersRes] = await Promise.all([
         canBillingNow
           ? apiFetch<AttendanceListResponse>("/api/v1/attendance", { token })
           : Promise.resolve({ data: [] } as AttendanceListResponse),
@@ -202,6 +212,9 @@ export default function AdminDashboardPage() {
         canBillingNow
           ? apiFetch<MembershipPlansResponse>("/api/v1/membership-plans", { token })
           : Promise.resolve({ data: [] } as MembershipPlansResponse),
+        canBillingNow
+          ? apiFetch<TrainersResponse>("/api/v1/trainers", { token })
+          : Promise.resolve({ data: [] } as TrainersResponse),
       ]);
       setGym(gymRes);
       setMembers(membersRes.data);
@@ -209,6 +222,7 @@ export default function AdminDashboardPage() {
       setPayments(paymentsRes.data);
       setUsers(usersRes.data);
       setPlans(plansRes.data);
+      setTrainers(trainersRes.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load dashboard.");
     } finally {
@@ -223,33 +237,47 @@ export default function AdminDashboardPage() {
   async function createPayment() {
     const token = getToken();
     if (!token) return;
-    if (newPaymentMemberId === "") return;
-
-    const raw = newPaymentAmount.trim();
-    const parsed = raw === "" ? NaN : Number(raw);
-    const amountCents = Number.isFinite(parsed) ? Math.round(parsed * 100) : NaN;
-
-    if (!Number.isFinite(amountCents) || amountCents < 1) {
-      setError("Enter a valid amount.");
+    if (newPaymentMemberId === "" || newPaymentPlanId === "") {
+      setError("Select a member and membership plan.");
       return;
     }
 
-    await apiFetch("/api/v1/payments", {
-      method: "POST",
-      token,
-      body: JSON.stringify({
-        member_id: newPaymentMemberId,
-        membership_plan_id: newPaymentPlanId === "" ? null : newPaymentPlanId,
-        amount_cents: amountCents,
-        method: newPaymentMethod,
-        reference: newPaymentReference.trim() === "" ? null : newPaymentReference.trim(),
-        notes: newPaymentNotes.trim() === "" ? null : newPaymentNotes.trim(),
-      }),
-    });
-    setNewPaymentPlanId("");
-    setNewPaymentReference("");
-    setNewPaymentNotes("");
-    await loadAll();
+    const amountCents = parseMoneyInput(newPaymentAmount, paymentCurrency);
+    if (amountCents === null) {
+      setError("Enter a valid amount in kyat.");
+      return;
+    }
+
+    if (paymentIsGold && newPaymentTrainerId === "" && trainers.length > 0) {
+      setError("Choose a personal trainer for Gold membership.");
+      return;
+    }
+
+    setError(null);
+    try {
+      await apiFetch("/api/v1/payments", {
+        method: "POST",
+        token,
+        body: JSON.stringify({
+          member_id: newPaymentMemberId,
+          membership_plan_id: newPaymentPlanId,
+          assigned_trainer_user_id:
+            paymentIsGold && newPaymentTrainerId !== "" ? newPaymentTrainerId : null,
+          amount_cents: amountCents,
+          currency: paymentCurrency,
+          method: newPaymentMethod,
+          reference: newPaymentReference.trim() === "" ? null : newPaymentReference.trim(),
+          notes: newPaymentNotes.trim() === "" ? null : newPaymentNotes.trim(),
+        }),
+      });
+      setNewPaymentPlanId("");
+      setNewPaymentTrainerId("");
+      setNewPaymentReference("");
+      setNewPaymentNotes("");
+      await loadAll();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to record payment.");
+    }
   }
 
   async function doCheckIn() {
@@ -481,9 +509,9 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div className="rounded-2xl border border-black/10 bg-zinc-50 p-4 dark:border-white/10 dark:bg-white/5">
-                  <div className="text-sm font-semibold">Record payment</div>
+                  <div className="text-sm font-semibold">Membership payment</div>
                   <div className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                    Save payment and generate a receipt.
+                    Silver (45,000 MMK) — gym access. Gold (200,000 MMK) — includes personal trainer.
                   </div>
                   <div className="mt-4 grid gap-3 sm:grid-cols-3">
                     <Select
@@ -502,10 +530,10 @@ export default function AdminDashboardPage() {
                     </Select>
 
                     <Select value={newPaymentMethod} onChange={(e) => setNewPaymentMethod(e.target.value)}>
-                      <option value="cash">cash</option>
-                      <option value="card">card</option>
-                      <option value="bank_transfer">bank_transfer</option>
-                      <option value="other">other</option>
+                      <option value="cash">Cash</option>
+                      <option value="card">Card</option>
+                      <option value="bank_transfer">Bank transfer</option>
+                      <option value="other">Other</option>
                     </Select>
 
                     <Select
@@ -514,34 +542,59 @@ export default function AdminDashboardPage() {
                       onChange={(e) => {
                         const id = e.target.value ? Number(e.target.value) : "";
                         setNewPaymentPlanId(id);
-                        const plan = plans.find((p) => p.id === id);
+                        setNewPaymentTrainerId("");
+                        const plan = sortedPlans.find((p) => p.id === id);
                         if (plan) {
-                          setNewPaymentAmount((plan.price_cents / 100).toFixed(2));
+                          setNewPaymentAmount(amountInputFromStored(plan.price_cents, plan.currency));
                         }
                       }}
                     >
-                      <option value="">One-time membership (30 days)</option>
-                      {plans.map((p) => (
+                      <option value="">Select plan</option>
+                      {sortedPlans.map((p) => (
                         <option key={p.id} value={p.id}>
-                          {p.name} • {p.duration_days} days • {formatMoney(p.price_cents, p.currency)}
+                          {formatPlanLabel(p)}
                         </option>
                       ))}
                     </Select>
+
+                    {selectedPaymentPlan ? (
+                      <div className="rounded-xl border border-black/10 bg-white px-3 py-2 text-xs text-zinc-600 dark:border-white/10 dark:bg-black dark:text-zinc-300 sm:col-span-3">
+                        {planDescription(selectedPaymentPlan.tier)}
+                      </div>
+                    ) : null}
+
+                    {paymentIsGold ? (
+                      <Select
+                        className="sm:col-span-3"
+                        value={newPaymentTrainerId === "" ? "" : String(newPaymentTrainerId)}
+                        onChange={(e) =>
+                          setNewPaymentTrainerId(e.target.value ? Number(e.target.value) : "")
+                        }
+                      >
+                        <option value="">Select personal trainer</option>
+                        {trainers.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.name}
+                          </option>
+                        ))}
+                      </Select>
+                    ) : null}
 
                     <Input
                       className="sm:col-span-2"
                       type="number"
                       value={newPaymentAmount}
                       onChange={(e) => setNewPaymentAmount(e.target.value)}
-                      min={0.01}
-                      step={0.01}
+                      min={1}
+                      step={1}
+                      placeholder="Amount (MMK)"
                     />
                     <Button
                       type="button"
                       onClick={() => void createPayment()}
-                      disabled={newPaymentMemberId === ""}
+                      disabled={newPaymentMemberId === "" || newPaymentPlanId === ""}
                     >
-                      Save
+                      Confirm payment
                     </Button>
 
                     <Input
@@ -558,7 +611,7 @@ export default function AdminDashboardPage() {
                     />
                   </div>
                   <div className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
-                    Amount is entered in dollars (example: 50.00).
+                    Enter the amount in Myanmar kyat (whole numbers).
                   </div>
                 </div>
               </>
@@ -581,7 +634,10 @@ export default function AdminDashboardPage() {
                 <div>
                   Last 20 payments total:{" "}
                   <span className="font-medium">
-                    {formatMoney(lastPaymentsTotalCents, "USD")}
+                    {formatMoney(
+                      lastPaymentsTotalCents,
+                      payments[0]?.currency ?? plans[0]?.currency ?? "MMK",
+                    )}
                   </span>
                 </div>
               </>
@@ -714,8 +770,13 @@ export default function AdminDashboardPage() {
                       <td className="px-3 py-2">
                         {m.membership ? (
                           <div className="min-w-0">
-                            <div className="truncate text-xs font-medium">
-                              {m.membership.plan_name ?? "Membership"}
+                            <div className="flex flex-wrap items-center gap-2">
+                              <div className="truncate text-xs font-medium">
+                                {m.membership.plan_name ?? "Membership"}
+                              </div>
+                              <Badge variant={tierBadgeVariant(m.membership.tier)}>
+                                {tierLabel(m.membership.tier)}
+                              </Badge>
                             </div>
                             <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
                               <Badge

@@ -31,7 +31,7 @@ final class MembershipPlanController extends Controller
             ->when(! $includeInactive, fn ($q) => $q->where('is_active', true))
             ->orderBy('sort_order')
             ->orderBy('id')
-            ->get(['id', 'name', 'duration_days', 'price_cents', 'currency', 'is_active', 'sort_order']);
+            ->get(['id', 'name', 'tier', 'duration_days', 'price_cents', 'currency', 'is_active', 'sort_order']);
 
         return response()->json([
             'data' => $plans,
@@ -51,6 +51,7 @@ final class MembershipPlanController extends Controller
         $plan = MembershipPlan::query()->create([
             'gym_id' => $gymId,
             'name' => $request->validated('name'),
+            'tier' => $request->validated('tier', 'silver'),
             'duration_days' => $request->validated('duration_days'),
             'price_cents' => $request->validated('price_cents'),
             'currency' => $request->validated('currency', 'USD'),
@@ -59,7 +60,7 @@ final class MembershipPlanController extends Controller
         ]);
 
         return response()->json([
-            'data' => $plan->only(['id', 'name', 'duration_days', 'price_cents', 'currency', 'is_active', 'sort_order']),
+            'data' => $plan->only(['id', 'name', 'tier', 'duration_days', 'price_cents', 'currency', 'is_active', 'sort_order']),
         ], 201);
     }
 
@@ -86,7 +87,7 @@ final class MembershipPlanController extends Controller
         $plan->save();
 
         return response()->json([
-            'data' => $plan->only(['id', 'name', 'duration_days', 'price_cents', 'currency', 'is_active', 'sort_order']),
+            'data' => $plan->only(['id', 'name', 'tier', 'duration_days', 'price_cents', 'currency', 'is_active', 'sort_order']),
         ]);
     }
 }

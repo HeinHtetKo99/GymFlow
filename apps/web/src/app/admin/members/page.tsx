@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { getToken, getUser, type AuthUser } from "@/lib/auth";
+import { canViewBillingOrAttendance } from "@/lib/roles";
+import { tierBadgeVariant, tierLabel } from "@/lib/membership-tier";
+import type { MembershipPlanOption } from "@/lib/membership-plans";
+import { RecordMembershipModal } from "@/components/admin/record-membership-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +26,7 @@ type MembersResponse = {
     status: string;
     membership: {
       plan_name: string | null;
+      tier?: string;
       status: string;
       ends_at: string;
       days_remaining: number;
@@ -33,13 +38,20 @@ type TrainersResponse = {
   data: Array<{ id: number; name: string; email: string }>;
 };
 
+type MembershipPlansResponse = {
+  data: MembershipPlanOption[];
+};
+
 export default function AdminMembersPage() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [gym, setGym] = useState<GymResponse | null>(null);
   const [members, setMembers] = useState<MembersResponse["data"]>([]);
   const [trainers, setTrainers] = useState<TrainersResponse["data"]>([]);
+  const [plans, setPlans] = useState<MembershipPlanOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [paymentForMember, setPaymentForMember] = useState<MembersResponse["data"][number] | null>(null);
 
   const [createForMember, setCreateForMember] = useState<MembersResponse["data"][number] | null>(null);
   const [email, setEmail] = useState<string>("");
@@ -51,7 +63,6 @@ export default function AdminMembersPage() {
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newPhone, setNewPhone] = useState("");
-  const [newTrainerId, setNewTrainerId] = useState<number | "">("");
   const [createLoginNow, setCreateLoginNow] = useState(true);
   const [newPassword, setNewPassword] = useState("password");
 
@@ -62,6 +73,10 @@ export default function AdminMembersPage() {
 
   const canManageMemberAccounts = useMemo(() => {
     return user?.role === "cashier" || isOwner;
+  }, [isOwner, user?.role]);
+
+  const canBilling = useMemo(() => {
+    return canViewBillingOrAttendance({ role: user?.role, isOwner });
   }, [isOwner, user?.role]);
 
   function formatDate(value: string | null) {
@@ -83,14 +98,21 @@ export default function AdminMembersPage() {
     setLoading(true);
     setError(null);
     try {
-      const [gymRes, membersRes, trainersRes] = await Promise.all([
-        apiFetch<GymResponse>("/api/v1/gym", { token }),
+      const gymRes = await apiFetch<GymResponse>("/api/v1/gym", { token });
+      const owner = gymRes.owner_user_id === u.id;
+      const billing = owner || u.role === "cashier";
+
+      const [membersRes, trainersRes, plansRes] = await Promise.all([
         apiFetch<MembersResponse>("/api/v1/members", { token }),
         apiFetch<TrainersResponse>("/api/v1/trainers", { token }),
+        billing
+          ? apiFetch<MembershipPlansResponse>("/api/v1/membership-plans", { token })
+          : Promise.resolve({ data: [] } as MembershipPlansResponse),
       ]);
       setGym(gymRes);
       setMembers(membersRes.data);
       setTrainers(trainersRes.data);
+      setPlans(plansRes.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load members.");
     } finally {
@@ -164,7 +186,6 @@ export default function AdminMembersPage() {
     setNewName("");
     setNewEmail("");
     setNewPhone("");
-    setNewTrainerId("");
     setCreateLoginNow(true);
     setNewPassword("password");
   }
@@ -199,7 +220,6 @@ export default function AdminMembersPage() {
           email: emailValue === "" ? null : emailValue,
           phone: phoneValue,
           status: "active",
-          assigned_trainer_user_id: newTrainerId === "" ? null : newTrainerId,
         }),
       });
 
@@ -303,7 +323,7 @@ export default function AdminMembersPage() {
         <div>
           <div className="text-2xl font-semibold tracking-tight">Members</div>
           <div className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            Manage member profiles and login accounts.
+            Manage member profiles, logins, and membership payments.
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -348,8 +368,13 @@ export default function AdminMembersPage() {
                   <td className="px-4 py-3">
                     {m.membership ? (
                       <div className="space-y-1">
-                        <div className="text-xs font-medium">
-                          {m.membership.plan_name ?? "Membership"}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div className="text-xs font-medium">
+                            {m.membership.plan_name ?? "Membership"}
+                          </div>
+                          <Badge variant={tierBadgeVariant(m.membership.tier)}>
+                            {tierLabel(m.membership.tier)}
+                          </Badge>
                         </div>
                         <div className="text-xs text-zinc-600 dark:text-zinc-400">
                           {m.membership.status} • {m.membership.days_remaining} days • ends{" "}
@@ -368,8 +393,23 @@ export default function AdminMembersPage() {
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {canManageMemberAccounts ? (
+                    {canManageMemberAccounts || canBilling ? (
                       <div className="flex flex-wrap justify-end gap-2">
+                        {canBilling && plans.length > 0 ? (
+                          <Button
+                            variant="neutral"
+                            size="sm"
+                            className="h-9 px-3 text-xs"
+                            type="button"
+                            disabled={busy}
+                            onClick={() => setPaymentForMember(m)}
+                          >
+                            Record payment
+                          </Button>
+                        ) : null}
+
+                        {canManageMemberAccounts ? (
+                          <>
                         {m.membership && m.membership.days_remaining > 0 ? (
                           m.membership.status === "canceling" ? (
                             <Button
@@ -419,6 +459,8 @@ export default function AdminMembersPage() {
                             Create login
                           </Button>
                         )}
+                          </>
+                        ) : null}
                       </div>
                     ) : (
                       <span className="text-xs text-zinc-600 dark:text-zinc-400">
@@ -442,6 +484,16 @@ export default function AdminMembersPage() {
           </table>
         </div>
       </div>
+
+      {paymentForMember ? (
+        <RecordMembershipModal
+          member={paymentForMember}
+          plans={plans}
+          trainers={trainers}
+          onClose={() => setPaymentForMember(null)}
+          onSuccess={loadAll}
+        />
+      ) : null}
 
       {createForMember ? (
         <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/30 px-4">
@@ -524,22 +576,13 @@ export default function AdminMembersPage() {
                 <div className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Email (optional)</div>
                 <Input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
               </label>
-              <label className="grid gap-2">
-                <div className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
-                  Assign trainer (optional)
-                </div>
-                <Select
-                  value={newTrainerId === "" ? "" : String(newTrainerId)}
-                  onChange={(e) => setNewTrainerId(e.target.value === "" ? "" : Number(e.target.value))}
-                >
-                  <option value="">No trainer</option>
-                  {trainers.map((t) => (
-                    <option key={t.id} value={String(t.id)}>
-                      {t.name} • {t.email}
-                    </option>
-                  ))}
-                </Select>
-              </label>
+
+              <div className="rounded-xl border border-black/10 bg-zinc-50 p-3 text-sm dark:border-white/10 dark:bg-white/5">
+                <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                  After creating the profile, use <span className="font-medium">Record payment</span> to sell Silver or Gold.
+                  Gold members can choose a personal trainer at checkout.
+                </p>
+              </div>
 
               <div className="rounded-xl border border-black/10 bg-zinc-50 p-3 text-sm dark:border-white/10 dark:bg-white/5">
                 <label className="inline-flex items-center gap-2">

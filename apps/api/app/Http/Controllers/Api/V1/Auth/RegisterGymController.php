@@ -85,9 +85,8 @@ final class RegisterGymController extends Controller
     private function createDefaultMembershipPlans(int $gymId): void
     {
         $defaults = [
-            ['name' => 'Monthly', 'duration_days' => 30, 'price_cents' => 5000, 'currency' => 'USD', 'is_active' => true, 'sort_order' => 10],
-            ['name' => 'Quarterly', 'duration_days' => 90, 'price_cents' => 13500, 'currency' => 'USD', 'is_active' => true, 'sort_order' => 20],
-            ['name' => 'Yearly', 'duration_days' => 365, 'price_cents' => 48000, 'currency' => 'USD', 'is_active' => true, 'sort_order' => 30],
+            ['name' => 'Silver', 'tier' => 'silver', 'duration_days' => 30, 'price_cents' => 45000, 'currency' => 'MMK', 'is_active' => true, 'sort_order' => 10],
+            ['name' => 'Gold', 'tier' => 'gold', 'duration_days' => 30, 'price_cents' => 200000, 'currency' => 'MMK', 'is_active' => true, 'sort_order' => 20],
         ];
 
         foreach ($defaults as $plan) {

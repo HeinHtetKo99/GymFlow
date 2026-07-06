@@ -3,13 +3,12 @@ import Link from "next/link";
 import {
   Activity,
   ArrowRight,
-  CalendarCheck,
-  ChevronRight,
-  CreditCard,
+  Building2,
   Dumbbell,
-  ShieldCheck,
+  KeyRound,
+  Layers,
+  Shield,
   Sparkles,
-  Users,
 } from "lucide-react";
 import { DashboardPreview } from "@/components/marketing/dashboard-preview";
 import { buttonClassName } from "@/components/ui/button-classes";
@@ -21,49 +20,59 @@ import {
 
 export const metadata: Metadata = createPageMetadata({
   description:
-    "GymFlow is a multi-tenant gym management platform for fitness studios. Manage members, staff roles, attendance, payments, workout plans, and owner analytics in one place.",
+    "GymFlow is a multi-tenant gym management SaaS. Register a gym, get a unique gym code, and run isolated staff workflows — attendance, memberships, payments, and analytics per tenant.",
   path: "/",
 });
 
-const features = [
+const tenantPillars = [
   {
-    Icon: Users,
-    title: "Role-based teams",
-    description: "Owner, cashier, trainer, and member workflows.",
+    Icon: Building2,
+    title: "One gym, one workspace",
+    description:
+      "Register a gym and get a unique code. Members, payments, and staff belong only to that gym.",
   },
   {
-    Icon: CalendarCheck,
-    title: "Attendance",
-    description: "Check-ins, check-outs, and retention rules.",
+    Icon: KeyRound,
+    title: "Gym code at login",
+    description:
+      "Users sign in with email + password and a gym code — the tenant slug that routes them to the right data.",
   },
   {
-    Icon: CreditCard,
-    title: "Billing",
-    description: "Payments, receipts, and membership renewals.",
+    Icon: Shield,
+    title: "Enforced isolation",
+    description:
+      "The API resolves the active gym from the X-Gym header. Policies block cross-tenant access.",
   },
   {
-    Icon: ShieldCheck,
-    title: "Multi-gym",
-    description: "Each gym isolated by its own gym code.",
+    Icon: Layers,
+    title: "Shared platform",
+    description:
+      "One deployment serves many gyms. Each owner configures plans, staff, and retention independently.",
   },
+] as const;
+
+const tenantFlow = [
+  { step: "1", title: "Create a gym", detail: "Owner registers → gym code assigned (e.g. gymflow)" },
+  { step: "2", title: "Invite staff", detail: "Cashiers and trainers scoped to that gym only" },
+  { step: "3", title: "Operate daily", detail: "Attendance, memberships, and payments stay in-tenant" },
 ] as const;
 
 const demoRoles = [
   {
     title: "Owner",
-    description: "Analytics, setup wizard, staff, and membership plans.",
+    description: "Set up your gym tenant — staff, plans, retention, and analytics.",
   },
   {
     title: "Cashier",
-    description: "Record payments, manage attendance, handle memberships.",
+    description: "Billing and attendance inside your gym's isolated workspace.",
   },
   {
     title: "Trainer",
-    description: "Assign workout and food plans with reusable templates.",
+    description: "Coach members assigned within the same gym tenant.",
   },
   {
     title: "Member",
-    description: "View plans, choose a trainer, manage membership status.",
+    description: "Portal access tied to one gym code — no cross-gym visibility.",
   },
 ] as const;
 
@@ -86,25 +95,45 @@ export default function Home() {
                   <Dumbbell className="h-6 w-6" />
                 </span>
                 <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
+                    Multi-tenant SaaS
+                  </p>
                   <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
                     GymFlow
                   </h1>
                   <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                    Gym management software for modern fitness studios.
+                    Many gyms. One platform. Strict tenant boundaries.
                   </p>
                 </div>
               </div>
 
               <p className="mt-6 max-w-lg text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-                Run attendance, memberships, payments, trainer plans, and owner analytics
-                from one dashboard — with clean role-based access for every person in your
-                gym.
+                GymFlow is built as a <span className="font-medium text-zinc-800 dark:text-zinc-200">multi-gym tenant system</span>.
+                Each fitness studio registers independently, receives a gym code, and runs its own
+                members, staff, and billing — without seeing other gyms&apos; data.
               </p>
+
+              <div className="mt-6 grid gap-3">
+                {tenantFlow.map(({ step, title, detail }) => (
+                  <div
+                    key={step}
+                    className="flex gap-3 rounded-2xl border border-black/10 bg-zinc-50 px-4 py-3 dark:border-white/10 dark:bg-white/5"
+                  >
+                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-sm font-semibold text-white">
+                      {step}
+                    </span>
+                    <div>
+                      <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{title}</div>
+                      <p className="mt-0.5 text-sm text-zinc-600 dark:text-zinc-400">{detail}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
 
               <DashboardPreview />
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                {features.map(({ Icon, title, description }) => (
+                {tenantPillars.map(({ Icon, title, description }) => (
                   <div
                     key={title}
                     className="rounded-2xl border border-black/10 bg-zinc-50 p-4 dark:border-white/10 dark:bg-white/5"
@@ -118,13 +147,10 @@ export default function Home() {
                 ))}
               </div>
 
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link className={buttonClassName({ variant: "primary", className: "gap-2" })} href="/login">
-                  Try live demo
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-                <Link className={buttonClassName({ variant: "outline" })} href="/register">
+              <div className="mt-8">
+                <Link className={buttonClassName({ variant: "primary", className: "gap-2" })} href="/register">
                   Create a gym
+                  <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
 
@@ -139,65 +165,63 @@ export default function Home() {
                 </span>
                 <div>
                   <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-                    Quick demo for reviewers
+                    Explore the demo tenant
                   </h2>
                   <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-                    Open login and click any role below to sign in instantly. No credentials
-                    to type — built for portfolio walkthroughs.
+                    Sign in to the pre-seeded <span className="font-medium">gymflow</span> gym. Every
+                    role below operates inside that single tenant — switch gyms at login with a
+                    different gym code.
                   </p>
                 </div>
               </div>
 
-              <div className="mt-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm text-zinc-700 dark:text-zinc-200">
-                <span className="font-medium text-emerald-700 dark:text-emerald-300">Gym code:</span>{" "}
-                gymflow
-                <span className="mx-2 text-zinc-400">·</span>
-                <span className="font-medium text-emerald-700 dark:text-emerald-300">Password:</span>{" "}
-                password
+              <div className="mt-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-zinc-700 dark:text-zinc-200">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">Gym code</span>
+                    <div className="mt-1 font-mono text-base text-zinc-900 dark:text-zinc-50">gymflow</div>
+                  </div>
+                  <div>
+                    <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">Password</span>
+                    <div className="mt-1 font-mono text-zinc-900 dark:text-zinc-50">password</div>
+                  </div>
+                </div>
+                <Link
+                  className={buttonClassName({ variant: "primary", fullWidth: true, className: "mt-4 gap-2" })}
+                  href="/login"
+                >
+                  Sign in to demo
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
               </div>
 
               <div className="mt-5 flex-1 space-y-3">
                 {demoRoles.map(({ title, description }) => (
-                  <Link
+                  <div
                     key={title}
-                    href="/login"
-                    className="group flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-black/10 bg-white p-4 transition-colors hover:border-emerald-500/30 hover:bg-emerald-500/5 dark:border-white/10 dark:bg-black dark:hover:border-emerald-500/40 dark:hover:bg-emerald-500/10"
+                    className="rounded-2xl border border-black/10 bg-white p-4 dark:border-white/10 dark:bg-black"
                   >
-                    <div>
-                      <div className="font-medium text-zinc-900 dark:text-zinc-100">{title}</div>
-                      <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-                        {description}
-                      </p>
-                    </div>
-                    <span className="inline-flex shrink-0 items-center gap-0.5 pt-0.5 text-xs font-medium text-emerald-700 opacity-80 transition-opacity group-hover:opacity-100 dark:text-emerald-300">
-                      Try
-                      <ChevronRight className="h-3.5 w-3.5" />
-                    </span>
-                  </Link>
+                    <div className="font-medium text-zinc-900 dark:text-zinc-100">{title}</div>
+                    <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+                      {description}
+                    </p>
+                  </div>
                 ))}
               </div>
 
-              <div className="mt-6 space-y-3 border-t border-black/10 pt-6 dark:border-white/10">
+              <div className="mt-6 border-t border-black/10 pt-6 dark:border-white/10">
                 <div className="flex items-start gap-3 rounded-2xl border border-black/10 bg-zinc-50 p-4 dark:border-white/10 dark:bg-white/5">
                   <Activity className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
                   <div>
                     <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                      What you can explore
+                      Portfolio highlight
                     </div>
                     <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                      Owner analytics, cashier billing, trainer plan templates, and the member
-                      portal — all seeded with 24 months of demo data.
+                      Tenant resolution middleware, per-gym policies, role gates, and ~18 months of
+                      seeded demo data inside the gymflow tenant.
                     </p>
                   </div>
                 </div>
-
-                <Link
-                  className={buttonClassName({ variant: "primary", fullWidth: true, className: "gap-2" })}
-                  href="/login"
-                >
-                  Open demo login
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
               </div>
             </section>
           </div>

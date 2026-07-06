@@ -64,34 +64,33 @@ final class DatabaseSeeder extends Seeder
                 ->update(['owner_user_id' => $owner->getKey()]);
         }
 
-        MembershipPlan::query()->updateOrCreate(
-            ['gym_id' => $gym->getKey(), 'name' => 'Basic'],
-            ['tier' => 'standard', 'duration_days' => 30, 'price_cents' => 5000, 'currency' => 'USD', 'is_active' => true, 'sort_order' => 10]
-        );
+        MembershipPlan::query()
+            ->where('gym_id', $gym->getKey())
+            ->whereNotIn('name', ['Silver', 'Gold'])
+            ->update(['is_active' => false]);
 
         $silverPlan = MembershipPlan::query()->updateOrCreate(
             ['gym_id' => $gym->getKey(), 'name' => 'Silver'],
-            ['tier' => 'silver', 'duration_days' => 30, 'price_cents' => 8000, 'currency' => 'USD', 'is_active' => true, 'sort_order' => 20]
+            [
+                'tier' => 'silver',
+                'duration_days' => 30,
+                'price_cents' => 45000,
+                'currency' => 'MMK',
+                'is_active' => true,
+                'sort_order' => 10,
+            ]
         );
 
         $goldPlan = MembershipPlan::query()->updateOrCreate(
             ['gym_id' => $gym->getKey(), 'name' => 'Gold'],
-            ['tier' => 'gold', 'duration_days' => 30, 'price_cents' => 12000, 'currency' => 'USD', 'is_active' => true, 'sort_order' => 30]
-        );
-
-        MembershipPlan::query()->updateOrCreate(
-            ['gym_id' => $gym->getKey(), 'name' => 'Monthly'],
-            ['tier' => 'standard', 'duration_days' => 30, 'price_cents' => 5000, 'currency' => 'USD', 'is_active' => true, 'sort_order' => 11]
-        );
-
-        MembershipPlan::query()->updateOrCreate(
-            ['gym_id' => $gym->getKey(), 'name' => 'Quarterly'],
-            ['tier' => 'silver', 'duration_days' => 90, 'price_cents' => 21000, 'currency' => 'USD', 'is_active' => true, 'sort_order' => 21]
-        );
-
-        MembershipPlan::query()->updateOrCreate(
-            ['gym_id' => $gym->getKey(), 'name' => 'Yearly'],
-            ['tier' => 'gold', 'duration_days' => 365, 'price_cents' => 96000, 'currency' => 'USD', 'is_active' => true, 'sort_order' => 31]
+            [
+                'tier' => 'gold',
+                'duration_days' => 30,
+                'price_cents' => 200000,
+                'currency' => 'MMK',
+                'is_active' => true,
+                'sort_order' => 20,
+            ]
         );
 
         $member = Member::query()->updateOrCreate(
@@ -100,7 +99,7 @@ final class DatabaseSeeder extends Seeder
                 'gym_id' => $gym->getKey(),
                 'name' => $testUser->name,
                 'email' => $testUser->email,
-                'phone' => '+1 555-0000',
+                'phone' => '+95 9 000 000 000',
                 'status' => 'active',
                 'assigned_trainer_user_id' => $trainer->getKey(),
             ]

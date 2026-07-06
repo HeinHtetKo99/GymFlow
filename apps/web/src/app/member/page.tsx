@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { includesPersonalTraining, tierBadgeVariant, tierLabel } from "@/lib/membership-tier";
+import { formatMoney } from "@/lib/money";
 
 type Trainer = { id: number; name: string; email: string };
 
@@ -118,7 +119,7 @@ export default function MemberDashboardPage() {
 
   const ptEligible = member?.personal_training?.eligible ?? includesPersonalTraining(member?.membership?.tier);
   const ptActive = member?.personal_training?.active ?? false;
-  const membershipTier = member?.personal_training?.tier ?? member?.membership?.tier ?? "standard";
+  const membershipTier = member?.membership?.tier ?? null;
 
   function formatDateTime(value: string | null) {
     if (!value) return "—";
@@ -131,18 +132,6 @@ export default function MemberDashboardPage() {
       }).format(d);
     } catch {
       return d.toLocaleString();
-    }
-  }
-
-  function formatMoney(amountCents: number, currency: string) {
-    const value = amountCents / 100;
-    try {
-      return new Intl.NumberFormat(undefined, {
-        style: "currency",
-        currency,
-      }).format(value);
-    } catch {
-      return `${value.toFixed(2)} ${currency}`;
     }
   }
 
@@ -416,9 +405,8 @@ export default function MemberDashboardPage() {
           <div className="rounded-2xl border border-amber-500/25 bg-gradient-to-br from-amber-500/10 to-transparent p-6 shadow-sm dark:from-amber-500/15">
             <div className="text-lg font-semibold">Personal training</div>
             <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
-              Upgrade to <span className="font-medium">Silver</span> or{" "}
-              <span className="font-medium">Gold</span> to choose a trainer and unlock workout plans,
-              nutrition, and progress tracking.
+              Upgrade to <span className="font-medium">Gold</span> to choose a personal trainer and unlock
+              workout plans, nutrition, and progress tracking. Silver includes gym access only.
             </p>
           </div>
         )}

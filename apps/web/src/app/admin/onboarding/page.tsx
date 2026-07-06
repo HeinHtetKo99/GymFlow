@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { getToken, getUser } from "@/lib/auth";
+import { tierBadgeVariant, tierLabel } from "@/lib/membership-tier";
+import { amountInputFromStored, parseMoneyInput } from "@/lib/money";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +39,7 @@ type MembersResponse = { data: MemberRow[] };
 type MembershipPlanRow = {
   id: number;
   name: string;
+  tier?: string;
   duration_days: number;
   price_cents: number;
   currency: string;
@@ -50,20 +53,7 @@ type MembershipPlanDraft = MembershipPlanRow & {
   price_display: string;
 };
 
-function toDollarsString(cents: number): string {
-  const n = cents / 100;
-  if (!Number.isFinite(n)) return "";
-  return n.toFixed(2);
-}
-
-function dollarsStringToCents(value: string): number | null {
-  const trimmed = value.trim();
-  if (trimmed === "") return null;
-  const normalized = trimmed.replace(/,/g, "");
-  const n = Number(normalized);
-  if (!Number.isFinite(n)) return null;
-  return Math.round(n * 100);
-}
+const DEFAULT_PLAN_CURRENCY = "MMK";
 
 export default function AdminOnboardingPage() {
   const router = useRouter();
@@ -121,7 +111,7 @@ export default function AdminOnboardingPage() {
           .map((p) => ({
           ...p,
           duration_display: String(p.duration_days),
-          price_display: toDollarsString(p.price_cents),
+          price_display: amountInputFromStored(p.price_cents, p.currency || DEFAULT_PLAN_CURRENCY),
         })),
       );
     } catch (err) {
@@ -190,15 +180,16 @@ export default function AdminOnboardingPage() {
 
   const [creatingPlan, setCreatingPlan] = useState(false);
   const [planName, setPlanName] = useState("");
+  const [planTier, setPlanTier] = useState<"silver" | "gold">("silver");
   const [planDuration, setPlanDuration] = useState("30");
-  const [planPrice, setPlanPrice] = useState("50.00");
+  const [planPrice, setPlanPrice] = useState("45000");
 
   async function createPlan() {
     const token = getToken();
     if (!token) return;
-    const cents = dollarsStringToCents(planPrice);
-    if (cents === null) {
-      setError("Plan price must be a number.");
+    const priceAmount = parseMoneyInput(planPrice, DEFAULT_PLAN_CURRENCY);
+    if (priceAmount === null) {
+      setError("Plan price must be a whole number in kyat.");
       return;
     }
     setCreatingPlan(true);
@@ -209,14 +200,17 @@ export default function AdminOnboardingPage() {
         token,
         body: JSON.stringify({
           name: planName.trim(),
+          tier: planTier,
           duration_days: Number(planDuration),
-          price_cents: cents,
-          currency: "USD",
+          price_cents: priceAmount,
+          currency: DEFAULT_PLAN_CURRENCY,
           is_active: true,
-          sort_order: 100,
+          sort_order: planTier === "gold" ? 20 : 10,
         }),
       });
       setPlanName("");
+      setPlanTier("silver");
+      setPlanPrice("45000");
       await loadAll();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create plan.");
@@ -233,9 +227,10 @@ export default function AdminOnboardingPage() {
   async function savePlan(p: MembershipPlanDraft) {
     const token = getToken();
     if (!token) return;
-    const priceCents = dollarsStringToCents(p.price_display);
-    if (priceCents === null) {
-      setError("Plan price must be a number.");
+    const currency = p.currency || DEFAULT_PLAN_CURRENCY;
+    const priceAmount = parseMoneyInput(p.price_display, currency);
+    if (priceAmount === null) {
+      setError("Plan price must be a whole number in kyat.");
       return;
     }
     const durationDays = Number(p.duration_display);
@@ -252,9 +247,10 @@ export default function AdminOnboardingPage() {
         token,
         body: JSON.stringify({
           name: p.name,
+          tier: p.tier ?? "silver",
           duration_days: durationDays,
-          price_cents: priceCents,
-          currency: p.currency,
+          price_cents: priceAmount,
+          currency,
           is_active: p.is_active,
           sort_order: p.sort_order,
         }),
@@ -271,7 +267,6 @@ export default function AdminOnboardingPage() {
   const [memberName, setMemberName] = useState("");
   const [memberEmail, setMemberEmail] = useState("");
   const [memberPhone, setMemberPhone] = useState("");
-  const [memberTrainerId, setMemberTrainerId] = useState<number | "">("");
   const [createMemberLogin, setCreateMemberLogin] = useState(true);
   const [memberLoginPassword, setMemberLoginPassword] = useState("password");
 
@@ -289,7 +284,6 @@ export default function AdminOnboardingPage() {
           email: memberEmail.trim() === "" ? null : memberEmail.trim(),
           phone: memberPhone.trim() === "" ? null : memberPhone.trim(),
           status: "active",
-          assigned_trainer_user_id: memberTrainerId === "" ? null : memberTrainerId,
         }),
       });
 
@@ -316,7 +310,6 @@ export default function AdminOnboardingPage() {
       setMemberName("");
       setMemberEmail("");
       setMemberPhone("");
-      setMemberTrainerId("");
       await loadAll();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create member.");
@@ -531,7 +524,7 @@ export default function AdminOnboardingPage() {
           <div>
             <div className="text-lg font-semibold">Step 2 — Membership plans</div>
             <div className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              Edit, activate, or add plans. Payments can only use active plans.
+              Silver and Gold monthly plans in MMK. Cashiers sell these when recording payments.
             </div>
           </div>
           <div className="rounded-full bg-zinc-900/5 px-3 py-1 text-xs text-zinc-700 dark:bg-white/10 dark:text-zinc-200">
@@ -551,6 +544,17 @@ export default function AdminOnboardingPage() {
                   placeholder="e.g. Weekly"
                 />
               </label>
+              <label className="grid gap-2 text-sm">
+                <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Tier</span>
+                <Select value={planTier} onChange={(e) => {
+                  const tier = e.target.value as "silver" | "gold";
+                  setPlanTier(tier);
+                  setPlanPrice(tier === "gold" ? "200000" : "45000");
+                }}>
+                  <option value="silver">Silver — gym access</option>
+                  <option value="gold">Gold — personal trainer</option>
+                </Select>
+              </label>
               <div className="grid grid-cols-2 gap-3">
                 <label className="grid gap-2 text-sm">
                   <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Duration (days)</span>
@@ -561,11 +565,11 @@ export default function AdminOnboardingPage() {
                   />
                 </label>
                 <label className="grid gap-2 text-sm">
-                  <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Price (USD)</span>
+                  <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Price (MMK)</span>
                   <Input
                     value={planPrice}
                     onChange={(e) => setPlanPrice(e.target.value)}
-                    inputMode="decimal"
+                    inputMode="numeric"
                   />
                 </label>
               </div>
@@ -593,6 +597,12 @@ export default function AdminOnboardingPage() {
                   className="rounded-2xl border border-black/10 bg-white p-4 dark:border-white/10 dark:bg-black"
                 >
                   <div className="grid gap-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Plan</div>
+                      {p.tier ? (
+                        <Badge variant={tierBadgeVariant(p.tier)}>{tierLabel(p.tier)}</Badge>
+                      ) : null}
+                    </div>
                     <div className="grid gap-2">
                       <div className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
                         Name
@@ -625,7 +635,7 @@ export default function AdminOnboardingPage() {
                       </label>
                       <label className="grid gap-2 text-sm">
                         <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                          Price (USD)
+                          Price (MMK)
                         </span>
                         <Input
                           value={p.price_display}
@@ -636,7 +646,7 @@ export default function AdminOnboardingPage() {
                               ),
                             )
                           }
-                          inputMode="decimal"
+                          inputMode="numeric"
                         />
                       </label>
                     </div>
@@ -714,22 +724,12 @@ export default function AdminOnboardingPage() {
                   onChange={(e) => setMemberPhone(e.target.value)}
                 />
               </label>
-              <label className="grid gap-2 text-sm">
-                <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                  Assign trainer (optional)
-                </span>
-                <Select
-                  value={memberTrainerId === "" ? "" : String(memberTrainerId)}
-                  onChange={(e) => setMemberTrainerId(e.target.value === "" ? "" : Number(e.target.value))}
-                >
-                  <option value="">No trainer</option>
-                  {trainers.map((t) => (
-                    <option key={t.id} value={String(t.id)}>
-                      {t.name} • {t.email}
-                    </option>
-                  ))}
-                </Select>
-              </label>
+              <div className="rounded-xl border border-black/10 bg-white p-3 text-sm dark:border-white/10 dark:bg-black">
+                <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                  After creating the member, use the cashier flow to record a Silver or Gold payment.
+                  Gold members choose a trainer at checkout.
+                </p>
+              </div>
               <div className="rounded-xl border border-black/10 bg-white p-3 text-sm dark:border-white/10 dark:bg-black">
                 <label className="inline-flex items-center gap-2">
                   <input

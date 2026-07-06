@@ -1,4 +1,4 @@
-export type MembershipTier = "standard" | "silver" | "gold";
+export type MembershipTier = "silver" | "gold";
 
 export function tierLabel(tier: string | null | undefined): string {
   switch (tier) {
@@ -7,7 +7,7 @@ export function tierLabel(tier: string | null | undefined): string {
     case "gold":
       return "Gold";
     default:
-      return "Standard";
+      return "No plan";
   }
 }
 
@@ -22,6 +22,14 @@ export function tierBadgeVariant(tier: string | null | undefined): "neutral" | "
   }
 }
 
+export function isGoldTier(tier: string | null | undefined): boolean {
+  return tier === "gold";
+}
+
 export function includesPersonalTraining(tier: string | null | undefined): boolean {
+  return tier === "gold";
+}
+
+export function hasActiveMembershipTier(tier: string | null | undefined): boolean {
   return tier === "silver" || tier === "gold";
 }

@@ -46,13 +46,13 @@ final class TrainerMembersFilterTest extends TestCase
             'status' => 'active',
         ]);
 
-        $silverPlan = \App\Models\MembershipPlan::query()->create([
+        $goldPlan = \App\Models\MembershipPlan::query()->create([
             'gym_id' => $gym->getKey(),
-            'name' => 'Silver',
-            'tier' => 'silver',
+            'name' => 'Gold',
+            'tier' => 'gold',
             'duration_days' => 30,
-            'price_cents' => 8000,
-            'currency' => 'USD',
+            'price_cents' => 200000,
+            'currency' => 'MMK',
             'is_active' => true,
             'sort_order' => 10,
         ]);
@@ -60,7 +60,7 @@ final class TrainerMembersFilterTest extends TestCase
         \App\Models\Membership::query()->create([
             'gym_id' => $gym->getKey(),
             'member_id' => $assigned->getKey(),
-            'membership_plan_id' => $silverPlan->getKey(),
+            'membership_plan_id' => $goldPlan->getKey(),
             'starts_at' => now()->subDays(3),
             'ends_at' => now()->addDays(27),
             'status' => 'active',

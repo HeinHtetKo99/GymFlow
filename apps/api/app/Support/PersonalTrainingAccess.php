@@ -83,10 +83,7 @@ final class PersonalTrainingAccess
             ->whereIn('status', ['active', 'canceling'])
             ->where('ends_at', '>', now())
             ->whereHas('plan', function (Builder $planQuery): void {
-                $planQuery->whereIn('tier', [
-                    MembershipTier::Silver->value,
-                    MembershipTier::Gold->value,
-                ]);
+                $planQuery->where('tier', MembershipTier::Gold->value);
             });
     }
 

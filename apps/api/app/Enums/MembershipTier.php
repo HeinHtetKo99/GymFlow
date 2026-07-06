@@ -10,7 +10,7 @@ enum MembershipTier: string
 
     public function includesPersonalTraining(): bool
     {
-        return $this === self::Silver || $this === self::Gold;
+        return $this === self::Gold;
     }
 
     public function label(): string

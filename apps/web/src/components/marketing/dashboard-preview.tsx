@@ -1,4 +1,4 @@
-import { BarChart3, CalendarCheck, CreditCard, LayoutDashboard, Users } from "lucide-react";
+import { BarChart3, Building2, CalendarCheck, CreditCard, LayoutDashboard, Users } from "lucide-react";
 
 export function DashboardPreview() {
   return (
@@ -8,6 +8,17 @@ export function DashboardPreview() {
         <span className="h-2.5 w-2.5 rounded-full bg-amber-400/80" />
         <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/80" />
         <span className="ml-2 text-xs text-zinc-500">gymflow.app/admin</span>
+        <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-300">
+          <Building2 className="h-3 w-3" />
+          tenant: gymflow
+        </span>
+      </div>
+
+      <div className="border-b border-white/10 bg-black/30 px-4 py-2 font-mono text-[10px] text-zinc-400">
+        <span className="text-emerald-400">GET</span> /api/v1/members
+        <span className="mx-2 text-zinc-600">|</span>
+        <span className="text-zinc-500">X-Gym:</span>{" "}
+        <span className="text-zinc-200">gymflow</span>
       </div>
 
       <div className="flex min-h-[220px]">
@@ -28,9 +39,7 @@ export function DashboardPreview() {
               <div
                 key={label}
                 className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] ${
-                  active
-                    ? "bg-emerald-600 text-white"
-                    : "text-zinc-400"
+                  active ? "bg-emerald-600 text-white" : "text-zinc-400"
                 }`}
               >
                 <Icon className="h-3 w-3" />
@@ -41,11 +50,16 @@ export function DashboardPreview() {
         </aside>
 
         <div className="min-w-0 flex-1 p-4">
+          <div className="mb-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[10px] text-zinc-400">
+            Data scoped to <span className="font-medium text-zinc-200">GymFlow Demo Gym</span> —
+            other tenants cannot read these records.
+          </div>
+
           <div className="grid grid-cols-3 gap-2">
             {[
-              { label: "Active members", value: "128" },
-              { label: "Check-ins today", value: "42" },
-              { label: "Revenue (30d)", value: "$8.4k" },
+              { label: "Members (this gym)", value: "37" },
+              { label: "Check-ins today", value: "12" },
+              { label: "Staff roles", value: "4" },
             ].map((stat) => (
               <div
                 key={stat.label}
@@ -59,7 +73,7 @@ export function DashboardPreview() {
 
           <div className="mt-3 rounded-xl border border-white/10 bg-white/5 p-3">
             <div className="flex items-center justify-between">
-              <div className="text-[11px] font-medium text-zinc-300">Monthly revenue</div>
+              <div className="text-[11px] font-medium text-zinc-300">Revenue — gymflow only</div>
               <BarChart3 className="h-3.5 w-3.5 text-emerald-400" />
             </div>
             <div className="mt-3 flex h-16 items-end gap-1.5">
