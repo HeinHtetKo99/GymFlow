@@ -67,18 +67,22 @@ final class AnalyticsDemoSeeder extends Seeder
 
         $plans = [
             MembershipPlan::query()->updateOrCreate(
-                ['gym_id' => $gym->getKey(), 'name' => 'Monthly'],
-                ['duration_days' => 30, 'price_cents' => 5000, 'currency' => 'USD', 'is_active' => true, 'sort_order' => 10]
+                ['gym_id' => $gym->getKey(), 'name' => 'Basic'],
+                ['tier' => 'standard', 'duration_days' => 30, 'price_cents' => 5000, 'currency' => 'USD', 'is_active' => true, 'sort_order' => 10]
             ),
             MembershipPlan::query()->updateOrCreate(
-                ['gym_id' => $gym->getKey(), 'name' => 'Quarterly'],
-                ['duration_days' => 90, 'price_cents' => 13500, 'currency' => 'USD', 'is_active' => true, 'sort_order' => 20]
+                ['gym_id' => $gym->getKey(), 'name' => 'Silver'],
+                ['tier' => 'silver', 'duration_days' => 30, 'price_cents' => 8000, 'currency' => 'USD', 'is_active' => true, 'sort_order' => 20]
             ),
             MembershipPlan::query()->updateOrCreate(
-                ['gym_id' => $gym->getKey(), 'name' => 'Yearly'],
-                ['duration_days' => 365, 'price_cents' => 48000, 'currency' => 'USD', 'is_active' => true, 'sort_order' => 30]
+                ['gym_id' => $gym->getKey(), 'name' => 'Gold'],
+                ['tier' => 'gold', 'duration_days' => 30, 'price_cents' => 12000, 'currency' => 'USD', 'is_active' => true, 'sort_order' => 30]
             ),
         ];
+        $standardPlan = $plans[0];
+        $silverPlan = $plans[1];
+        $goldPlan = $plans[2];
+        $coachingPlans = [$silverPlan, $goldPlan];
 
         $demoMemberEmails = [];
         for ($i = 1; $i <= 36; $i++) {
@@ -134,7 +138,7 @@ final class AnalyticsDemoSeeder extends Seeder
         $now = now();
 
         foreach ($activeMembers as $i => $member) {
-            $plan = $plans[$i % count($plans)];
+            $plan = $i % 2 === 0 ? $silverPlan : $goldPlan;
             $startsAt = $now->copy()->subDays(14);
             $endsAt = $now->copy()->addDays((int) $plan->duration_days - 14);
             Membership::query()->create([
@@ -149,7 +153,7 @@ final class AnalyticsDemoSeeder extends Seeder
         }
 
         foreach ($expiredMembers as $i => $member) {
-            $plan = $plans[$i % count($plans)];
+            $plan = $coachingPlans[$i % count($coachingPlans)];
             $endsAt = $now->copy()->subDays(2 + ($i % 20));
             $startsAt = $endsAt->copy()->subDays((int) $plan->duration_days);
             Membership::query()->create([
@@ -173,7 +177,7 @@ final class AnalyticsDemoSeeder extends Seeder
 
             for ($j = 0; $j < $paymentsThisMonth; $j++) {
                 $member = $activeMembers[($m * 13 + $j * 7) % count($activeMembers)];
-                $plan = $plans[($m + $j) % count($plans)];
+                $plan = $coachingPlans[($m + $j) % count($coachingPlans)];
                 $paidAt = $monthStart->copy()->addDays(($j * 3) % 25)->addHours(10 + ($j % 7));
 
                 $amount = (int) $plan->price_cents;

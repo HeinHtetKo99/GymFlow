@@ -11,6 +11,7 @@ import {
 } from "@/components/progress/member-progress-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { includesPersonalTraining, tierBadgeVariant, tierLabel } from "@/lib/membership-tier";
 
 type Trainer = { id: number; name: string; email: string };
 
@@ -26,12 +27,18 @@ type MemberMeResponse = {
       id: number;
       membership_plan_id: number;
       plan_name: string | null;
+      tier?: string;
       starts_at: string;
       ends_at: string;
       status: string;
       cancel_requested_at: string | null;
       days_remaining: number;
     } | null;
+    personal_training?: {
+      eligible: boolean;
+      active: boolean;
+      tier: string | null;
+    };
   };
 };
 
@@ -109,6 +116,10 @@ export default function MemberDashboardPage() {
     return parsePlanContent(raw, "food");
   }, [foodPlan?.content]);
 
+  const ptEligible = member?.personal_training?.eligible ?? includesPersonalTraining(member?.membership?.tier);
+  const ptActive = member?.personal_training?.active ?? false;
+  const membershipTier = member?.personal_training?.tier ?? member?.membership?.tier ?? "standard";
+
   function formatDateTime(value: string | null) {
     if (!value) return "—";
     const d = new Date(value);
@@ -141,21 +152,33 @@ export default function MemberDashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const [meRes, trainersRes, attendanceRes, paymentsRes, plansRes, progressRes] = await Promise.all([
+      const [meRes, trainersRes, attendanceRes, paymentsRes] = await Promise.all([
         apiFetch<MemberMeResponse>("/api/v1/members/me", { token }),
         apiFetch<TrainersResponse>("/api/v1/trainers", { token }),
         apiFetch<AttendanceMeResponse>("/api/v1/attendance/me", { token }),
         apiFetch<PaymentsMeResponse>("/api/v1/payments/me", { token }),
-        apiFetch<MemberPlansResponse>("/api/v1/members/me/plans", { token }),
-        apiFetch<{ data: MemberProgressData }>("/api/v1/members/me/progress", { token }),
       ]);
       setMember(meRes.data);
       setTrainers(trainersRes.data);
       setAttendance(attendanceRes.data);
       setPayments(paymentsRes.data);
-      setPlans(plansRes.data);
-      setProgress(progressRes.data);
       setTrainerChoice(meRes.data.assigned_trainer_user_id ?? "");
+
+      const canLoadCoaching =
+        meRes.data.personal_training?.eligible ??
+        includesPersonalTraining(meRes.data.membership?.tier);
+
+      if (canLoadCoaching && meRes.data.personal_training?.active) {
+        const [plansRes, progressRes] = await Promise.all([
+          apiFetch<MemberPlansResponse>("/api/v1/members/me/plans", { token }),
+          apiFetch<{ data: MemberProgressData }>("/api/v1/members/me/progress", { token }),
+        ]);
+        setPlans(plansRes.data);
+        setProgress(progressRes.data);
+      } else {
+        setPlans([]);
+        setProgress(null);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load.");
     } finally {
@@ -276,6 +299,7 @@ export default function MemberDashboardPage() {
           </div>
         </div>
 
+        {ptEligible ? (
         <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">
           <div className="text-lg font-semibold">My Trainer</div>
           <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
@@ -388,6 +412,16 @@ export default function MemberDashboardPage() {
             </Button>
           </div>
         </div>
+        ) : (
+          <div className="rounded-2xl border border-amber-500/25 bg-gradient-to-br from-amber-500/10 to-transparent p-6 shadow-sm dark:from-amber-500/15">
+            <div className="text-lg font-semibold">Personal training</div>
+            <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
+              Upgrade to <span className="font-medium">Silver</span> or{" "}
+              <span className="font-medium">Gold</span> to choose a trainer and unlock workout plans,
+              nutrition, and progress tracking.
+            </p>
+          </div>
+        )}
       </section>
 
       <section className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">
@@ -415,6 +449,9 @@ export default function MemberDashboardPage() {
                   }
                 >
                   {member.membership.status}
+                </Badge>
+                <Badge variant={tierBadgeVariant(membershipTier)}>
+                  {tierLabel(membershipTier)} member
                 </Badge>
                 <Badge variant="neutral">
                   {member.membership.days_remaining} days remaining
@@ -455,10 +492,19 @@ export default function MemberDashboardPage() {
         ) : null}
       </section>
 
+      {ptEligible && !ptActive ? (
+        <section className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-sm text-zinc-700 dark:text-zinc-300">
+          Select a personal trainer to unlock your workout plan, nutrition plan, and progress tracking.
+        </section>
+      ) : null}
+
+      {ptActive ? (
       <section className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">
         <MemberProgressPanel progress={progress} loading={loading} />
       </section>
+      ) : null}
 
+      {ptActive ? (
       <section className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -511,6 +557,7 @@ export default function MemberDashboardPage() {
           </div>
         </div>
       </section>
+      ) : null}
 
       <section className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">

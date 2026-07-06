@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api\V1\MembershipPlan;
 
+use App\Enums\MembershipTier;
 use App\Support\TenantContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -33,6 +34,7 @@ final class UpdateMembershipPlanRequest extends FormRequest
             'currency' => ['sometimes', 'string', 'size:3'],
             'is_active' => ['sometimes', 'boolean'],
             'sort_order' => ['sometimes', 'integer', 'min:0', 'max:65535'],
+            'tier' => ['sometimes', 'string', Rule::in(array_map(fn (MembershipTier $t) => $t->value, MembershipTier::cases()))],
         ];
     }
 }

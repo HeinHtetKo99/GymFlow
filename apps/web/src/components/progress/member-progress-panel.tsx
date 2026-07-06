@@ -35,6 +35,7 @@ type MemberProgressPanelProps = {
   memberId?: number;
   onMeasurementSaved?: () => void | Promise<void>;
   showLogForm?: boolean;
+  compact?: boolean;
 };
 
 const PERIOD_OPTIONS: Array<{ id: ProgressPeriod; label: string }> = [
@@ -75,6 +76,7 @@ export function MemberProgressPanel({
   memberId,
   onMeasurementSaved,
   showLogForm = false,
+  compact = false,
 }: MemberProgressPanelProps) {
   const [period, setPeriod] = useState<ProgressPeriod>("30d");
   const [saving, setSaving] = useState(false);
@@ -142,12 +144,16 @@ export function MemberProgressPanel({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <div className="text-lg font-semibold">Progress</div>
-          <div className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            Track weight and body measurements over time.
+        {compact ? (
+          <div className="text-sm text-zinc-600 dark:text-zinc-400">Body measurements over time</div>
+        ) : (
+          <div>
+            <div className="text-lg font-semibold">Progress</div>
+            <div className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+              Track weight and body measurements over time.
+            </div>
           </div>
-        </div>
+        )}
         <div className="flex flex-wrap gap-2">
           {PERIOD_OPTIONS.map((option) => (
             <button

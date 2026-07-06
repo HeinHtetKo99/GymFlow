@@ -124,3 +124,36 @@ export function serializePlanContent(plan: StructuredPlan): string {
   return JSON.stringify(normalized);
 }
 
+/** Human-readable text for trainer editing (works with legacy or structured storage). */
+export function structuredPlanToText(plan: StructuredPlan): string {
+  const blocks = plan.sections
+    .map((section) => {
+      const label = section.label.trim();
+      const items = section.items.map((i) => i.trim()).filter(Boolean);
+      if (items.length === 0) {
+        return label || "";
+      }
+      const body = items
+        .map((item) => (item.startsWith("-") ? item : `- ${item}`))
+        .join("\n");
+      return label ? `${label}\n${body}` : body;
+    })
+    .filter((block) => block.trim().length > 0);
+
+  const parts = [
+    plan.title?.trim() || "",
+    ...blocks,
+    plan.updated_note?.trim() || "",
+  ].filter(Boolean);
+
+  return parts.join("\n\n");
+}
+
+export function planContentToEditableText(content: string, type: PlanType): string {
+  const parsed = parsePlanContent(content, type);
+  if (parsed.kind === "legacy") {
+    return parsed.text;
+  }
+  return structuredPlanToText(parsed.plan);
+}
+

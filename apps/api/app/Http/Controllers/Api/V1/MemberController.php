@@ -11,6 +11,7 @@ use App\Models\Member;
 use App\Models\MemberPlan;
 use App\Models\Membership;
 use App\Models\User;
+use App\Support\PersonalTrainingAccess;
 use App\Support\TenantContext;
 use Illuminate\Support\Facades\Gate;
 
@@ -34,6 +35,7 @@ final class MemberController extends Controller
 
         if (is_string($assignedTrainer) && strtolower(trim($assignedTrainer)) === 'me' && $actor !== null && $actor->role === UserRole::Trainer) {
             $query->where('assigned_trainer_user_id', $actor->getKey());
+            PersonalTrainingAccess::scopeWithActiveCoachingTier($query, $gymId);
         }
 
         $members = $query
@@ -45,7 +47,7 @@ final class MemberController extends Controller
         $memberships = Membership::query()
             ->where('gym_id', $gymId)
             ->whereIn('member_id', $memberIds)
-            ->with(['plan:id,name'])
+            ->with(['plan:id,name,tier'])
             ->orderByDesc('ends_at')
             ->get()
             ->groupBy('member_id')
@@ -130,6 +132,14 @@ final class MemberController extends Controller
         }
 
         Gate::authorize('update', $member);
+
+        if ($request->has('assigned_trainer_user_id') && $request->validated('assigned_trainer_user_id') !== null) {
+            if (! PersonalTrainingAccess::hasCoachingTier($member, $gymId)) {
+                return response()->json([
+                    'message' => 'Personal trainer assignment requires an active Silver or Gold membership.',
+                ], 422);
+            }
+        }
 
         $prevTrainerId = $member->assigned_trainer_user_id;
 
@@ -221,6 +231,7 @@ final class MemberController extends Controller
 
         $membership = $this->currentMembership($gymId, $member);
         $member->setAttribute('membership', $this->membershipPayload($membership));
+        $member->setAttribute('personal_training', $this->personalTrainingPayload($member, $gymId));
 
         return response()->json([
             'data' => $member,
@@ -251,6 +262,14 @@ final class MemberController extends Controller
         }
 
         Gate::authorize('assignTrainer', $member);
+
+        if ($request->has('assigned_trainer_user_id') && $request->validated('assigned_trainer_user_id') !== null) {
+            if (! PersonalTrainingAccess::hasCoachingTier($member, $gymId)) {
+                return response()->json([
+                    'message' => 'Personal trainer assignment requires an active Silver or Gold membership.',
+                ], 422);
+            }
+        }
 
         $prevTrainerId = $member->assigned_trainer_user_id;
 
@@ -455,7 +474,7 @@ final class MemberController extends Controller
         return Membership::query()
             ->where('gym_id', $gymId)
             ->where('member_id', $member->getKey())
-            ->with(['plan:id,name'])
+            ->with(['plan:id,name,tier'])
             ->orderByDesc('ends_at')
             ->first();
     }
@@ -480,11 +499,26 @@ final class MemberController extends Controller
             'id' => $membership->getKey(),
             'membership_plan_id' => $membership->membership_plan_id,
             'plan_name' => $membership->plan?->name,
+            'tier' => $membership->plan?->tier ?? 'standard',
             'starts_at' => $membership->starts_at,
             'ends_at' => $membership->ends_at,
             'status' => $status,
             'cancel_requested_at' => $membership->cancel_requested_at,
             'days_remaining' => $daysRemaining,
+        ];
+    }
+
+    /**
+     * @return array{eligible: bool, active: bool, tier: string|null}
+     */
+    private function personalTrainingPayload(Member $member, int $gymId): array
+    {
+        $coachingTier = PersonalTrainingAccess::coachingTier($member, $gymId);
+
+        return [
+            'eligible' => $coachingTier !== null,
+            'active' => PersonalTrainingAccess::canUsePersonalTraining($member, $gymId),
+            'tier' => $coachingTier?->value,
         ];
     }
 }

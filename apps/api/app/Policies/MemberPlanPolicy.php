@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Models\Member;
 use App\Models\MemberPlan;
 use App\Models\User;
+use App\Support\PersonalTrainingAccess;
 
 final class MemberPlanPolicy
 {
@@ -16,7 +17,7 @@ final class MemberPlanPolicy
         }
 
         if ($member->user_id !== null && (int) $member->user_id === (int) $user->getKey()) {
-            return true;
+            return PersonalTrainingAccess::canUsePersonalTraining($member, (int) $member->gym_id);
         }
 
         if ($user->role === UserRole::Owner || $user->role === UserRole::Cashier) {
@@ -25,7 +26,8 @@ final class MemberPlanPolicy
 
         if ($user->role === UserRole::Trainer) {
             return $member->assigned_trainer_user_id !== null
-                && (int) $member->assigned_trainer_user_id === (int) $user->getKey();
+                && (int) $member->assigned_trainer_user_id === (int) $user->getKey()
+                && PersonalTrainingAccess::hasCoachingTier($member, (int) $member->gym_id);
         }
 
         $gym = $user->gym;
@@ -36,6 +38,10 @@ final class MemberPlanPolicy
     public function upsert(User $user, Member $member): bool
     {
         if ((int) $user->gym_id !== (int) $member->gym_id) {
+            return false;
+        }
+
+        if (! PersonalTrainingAccess::hasCoachingTier($member, (int) $member->gym_id)) {
             return false;
         }
 

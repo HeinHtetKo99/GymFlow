@@ -5,6 +5,7 @@ namespace App\Policies;
 use App\Enums\UserRole;
 use App\Models\Member;
 use App\Models\User;
+use App\Support\PersonalTrainingAccess;
 
 final class MemberPolicy
 {
@@ -66,6 +67,14 @@ final class MemberPolicy
 
     public function assignTrainer(User $user, Member $member): bool
     {
-        return $this->update($user, $member);
+        if (! $this->update($user, $member)) {
+            return false;
+        }
+
+        if ($member->user_id !== null && (int) $member->user_id === (int) $user->getKey()) {
+            return PersonalTrainingAccess::hasCoachingTier($member, (int) $member->gym_id);
+        }
+
+        return true;
     }
 }

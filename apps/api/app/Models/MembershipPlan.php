@@ -9,6 +9,7 @@ final class MembershipPlan extends Model
     protected $fillable = [
         'gym_id',
         'name',
+        'tier',
         'duration_days',
         'price_cents',
         'currency',
