@@ -66,7 +66,7 @@ final class PersonalTrainingTierTest extends TestCase
 
     public function test_standard_member_cannot_assign_trainer(): void
     {
-        [$gym, , $memberUser, $trainer] = $this->createMemberWithTier('standard');
+        [$gym, , $memberUser, $trainer] = $this->createMemberWithTier('standard', withTrainer: true);
 
         Sanctum::actingAs($memberUser);
 

@@ -10,7 +10,6 @@ import type { MemberProgressData } from "@/components/progress/member-progress-p
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { tierBadgeVariant, tierLabel } from "@/lib/membership-tier";
 
 type MembersResponse = {
