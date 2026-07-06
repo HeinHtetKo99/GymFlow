@@ -38,4 +38,9 @@ final class Member extends Model
     {
         return $this->hasMany(Membership::class);
     }
+
+    public function measurements()
+    {
+        return $this->hasMany(MemberMeasurement::class);
+    }
 }

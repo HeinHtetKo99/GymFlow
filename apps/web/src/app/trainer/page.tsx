@@ -10,6 +10,10 @@ import { Select } from "@/components/ui/select";
 import { StructuredPlanEditor } from "@/components/plans/structured-plan-editor";
 import { StructuredPlanPreview } from "@/components/plans/structured-plan-preview";
 import { TemplatePicker, type PlanTemplateListItem } from "@/components/plans/template-picker";
+import {
+  MemberProgressPanel,
+  type MemberProgressData,
+} from "@/components/progress/member-progress-panel";
 
 type MembersResponse = {
   data: Array<{
@@ -73,6 +77,8 @@ export default function TrainerHomePage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<MemberProgressData | null>(null);
+  const [progressLoading, setProgressLoading] = useState(false);
 
   const selectedMember = useMemo(() => {
     if (!selectedMemberId) return null;
@@ -136,6 +142,22 @@ export default function TrainerHomePage() {
     }
   }
 
+  async function loadProgress(memberId: number) {
+    const token = getToken();
+    if (!token) return;
+    setProgressLoading(true);
+    try {
+      const res = await apiFetch<{ data: MemberProgressData }>(`/api/v1/members/${memberId}/progress`, {
+        token,
+      });
+      setProgress(res.data);
+    } catch {
+      setProgress(null);
+    } finally {
+      setProgressLoading(false);
+    }
+  }
+
   async function loadTemplates(type: PlanType) {
     const token = getToken();
     if (!token) return;
@@ -158,6 +180,7 @@ export default function TrainerHomePage() {
   useEffect(() => {
     if (!selectedMemberId) return;
     void loadPlans(selectedMemberId);
+    void loadProgress(selectedMemberId);
   }, [selectedMemberId]);
 
   useEffect(() => {
@@ -409,6 +432,18 @@ export default function TrainerHomePage() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">
+              <MemberProgressPanel
+                progress={progress}
+                loading={progressLoading}
+                memberId={selectedMemberId ?? undefined}
+                showLogForm={Boolean(selectedMemberId)}
+                onMeasurementSaved={async () => {
+                  if (selectedMemberId) await loadProgress(selectedMemberId);
+                }}
+              />
             </div>
           </div>
         </div>

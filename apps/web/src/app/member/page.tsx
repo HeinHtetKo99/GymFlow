@@ -5,6 +5,10 @@ import { apiFetch } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 import { parsePlanContent } from "@/lib/plan-schema";
 import { StructuredPlanPreview } from "@/components/plans/structured-plan-preview";
+import {
+  MemberProgressPanel,
+  type MemberProgressData,
+} from "@/components/progress/member-progress-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -68,6 +72,7 @@ export default function MemberDashboardPage() {
   const [attendance, setAttendance] = useState<AttendanceMeResponse["data"]>([]);
   const [payments, setPayments] = useState<PaymentsMeResponse["data"]>([]);
   const [plans, setPlans] = useState<MemberPlansResponse["data"]>([]);
+  const [progress, setProgress] = useState<MemberProgressData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -136,18 +141,20 @@ export default function MemberDashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const [meRes, trainersRes, attendanceRes, paymentsRes, plansRes] = await Promise.all([
+      const [meRes, trainersRes, attendanceRes, paymentsRes, plansRes, progressRes] = await Promise.all([
         apiFetch<MemberMeResponse>("/api/v1/members/me", { token }),
         apiFetch<TrainersResponse>("/api/v1/trainers", { token }),
         apiFetch<AttendanceMeResponse>("/api/v1/attendance/me", { token }),
         apiFetch<PaymentsMeResponse>("/api/v1/payments/me", { token }),
         apiFetch<MemberPlansResponse>("/api/v1/members/me/plans", { token }),
+        apiFetch<{ data: MemberProgressData }>("/api/v1/members/me/progress", { token }),
       ]);
       setMember(meRes.data);
       setTrainers(trainersRes.data);
       setAttendance(attendanceRes.data);
       setPayments(paymentsRes.data);
       setPlans(plansRes.data);
+      setProgress(progressRes.data);
       setTrainerChoice(meRes.data.assigned_trainer_user_id ?? "");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load.");
@@ -446,6 +453,10 @@ export default function MemberDashboardPage() {
             Cancel scheduled at end of period.
           </div>
         ) : null}
+      </section>
+
+      <section className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">
+        <MemberProgressPanel progress={progress} loading={loading} />
       </section>
 
       <section className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">

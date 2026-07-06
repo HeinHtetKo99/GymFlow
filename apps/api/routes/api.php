@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\Gym\ShowGymController;
 use App\Http\Controllers\Api\V1\Gym\UpdateGymController;
 use App\Http\Controllers\Api\V1\AttendanceController;
 use App\Http\Controllers\Api\V1\MemberController;
+use App\Http\Controllers\Api\V1\MemberMeasurementController;
 use App\Http\Controllers\Api\V1\MemberPlanController;
 use App\Http\Controllers\Api\V1\MembershipPlanController;
 use App\Http\Controllers\Api\V1\PaymentController;
@@ -50,6 +51,8 @@ Route::prefix('v1')->group(function () {
             Route::post('/members/me/membership/cancel', [MemberController::class, 'cancelMyMembership']);
             Route::post('/members/me/membership/undo-cancel', [MemberController::class, 'undoCancelMyMembership']);
             Route::get('/members/me/plans', [MemberPlanController::class, 'me']);
+            Route::get('/members/me/measurements', [MemberMeasurementController::class, 'me']);
+            Route::get('/members/me/progress', [MemberMeasurementController::class, 'myProgress']);
 
             Route::get('/members', [MemberController::class, 'index']);
             Route::post('/members', [MemberController::class, 'store']);
@@ -57,6 +60,9 @@ Route::prefix('v1')->group(function () {
             Route::patch('/members/{id}', [MemberController::class, 'update']);
             Route::get('/members/{id}/plans', [MemberPlanController::class, 'forMember']);
             Route::put('/members/{id}/plans/{type}', [MemberPlanController::class, 'upsert']);
+            Route::get('/members/{id}/measurements', [MemberMeasurementController::class, 'forMember']);
+            Route::post('/members/{id}/measurements', [MemberMeasurementController::class, 'store']);
+            Route::get('/members/{id}/progress', [MemberMeasurementController::class, 'progressForMember']);
             Route::post('/members/{id}/membership/cancel', [MemberController::class, 'cancelMembership']);
             Route::post('/members/{id}/membership/undo-cancel', [MemberController::class, 'undoCancelMembership']);
             Route::delete('/members/{id}', [MemberController::class, 'destroy']);
