@@ -84,6 +84,7 @@ Create `apps/web/.env.local`:
 ```env
 NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
 NEXT_PUBLIC_TENANT_SLUG=gymflow
+NEXT_PUBLIC_SITE_URL=https://gym-flow-smoky.vercel.app
 ```
 
 Optional — show one-click demo logins on `/login` (recommended for portfolio demos):
@@ -91,6 +92,8 @@ Optional — show one-click demo logins on `/login` (recommended for portfolio d
 ```env
 NEXT_PUBLIC_SHOW_DEMO_ACCOUNTS=true
 ```
+
+`NEXT_PUBLIC_SITE_URL` is used for canonical URLs, Open Graph tags, `sitemap.xml`, and `robots.txt`.
 
 `NEXT_PUBLIC_TENANT_SLUG` is the default gym code used by the web app when calling the API (sent as the `X-Gym` header).
 

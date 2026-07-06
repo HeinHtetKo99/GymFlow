@@ -13,6 +13,7 @@ Create `apps/web/.env.local`:
 ```env
 NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
 NEXT_PUBLIC_TENANT_SLUG=gymflow
+NEXT_PUBLIC_SITE_URL=https://gym-flow-smoky.vercel.app
 NEXT_PUBLIC_SHOW_DEMO_ACCOUNTS=true
 ```
 

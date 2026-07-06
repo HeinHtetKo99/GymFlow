@@ -1,10 +1,29 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarCheck, CreditCard, Dumbbell, Users } from "lucide-react";
 import { buttonClassName } from "@/components/ui/button-classes";
+import {
+  createPageMetadata,
+  createSoftwareApplicationJsonLd,
+  createWebSiteJsonLd,
+} from "@/lib/seo";
+
+export const metadata: Metadata = createPageMetadata({
+  description:
+    "GymFlow is a multi-tenant gym management platform for fitness studios. Manage members, staff roles, attendance, payments, workout plans, and owner analytics in one place.",
+  path: "/",
+});
 
 export default function Home() {
+  const structuredData = [createWebSiteJsonLd(), createSoftwareApplicationJsonLd()];
+
   return (
-    <main className="flex flex-1 items-center justify-center px-6 py-16">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+      <main className="flex flex-1 items-center justify-center px-6 py-16">
       <div className="w-full max-w-6xl">
         <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
           <section className="relative overflow-hidden rounded-3xl border border-black/10 bg-white p-8 shadow-sm dark:border-white/10 dark:bg-black sm:p-10">
@@ -15,7 +34,8 @@ export default function Home() {
               <div>
                 <h1 className="text-3xl font-semibold tracking-tight">GymFlow</h1>
                 <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                  Clean gym management dashboard (multi-gym via gym code).
+                  Multi-tenant gym management software for attendance, memberships,
+                  payments, and trainer plans.
                 </p>
               </div>
             </div>
@@ -104,5 +124,6 @@ export default function Home() {
         </div>
       </div>
     </main>
+    </>
   );
 }
