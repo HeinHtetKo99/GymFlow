@@ -19,11 +19,11 @@ export function Card({ className, ...props }: CardProps) {
 export type CardHeaderProps = React.HTMLAttributes<HTMLDivElement>;
 
 export function CardHeader({ className, ...props }: CardHeaderProps) {
-  return <div className={cn("px-6 py-5", className)} {...props} />;
+  return <div className={cn("px-4 py-4 sm:px-6 sm:py-5", className)} {...props} />;
 }
 
 export type CardContentProps = React.HTMLAttributes<HTMLDivElement>;
 
 export function CardContent({ className, ...props }: CardContentProps) {
-  return <div className={cn("px-6 pb-6", className)} {...props} />;
+  return <div className={cn("px-4 pb-4 sm:px-6 sm:pb-6", className)} {...props} />;
 }

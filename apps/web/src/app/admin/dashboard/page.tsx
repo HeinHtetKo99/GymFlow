@@ -18,6 +18,13 @@ import { Button } from "@/components/ui/button";
 import { buttonClassName } from "@/components/ui/button-classes";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import {
+  DataActions,
+  DataDesktop,
+  DataField,
+  DataMobile,
+  DataRow,
+} from "@/components/ui/responsive-data";
 
 type GymResponse = {
   id: number;
@@ -385,7 +392,7 @@ export default function AdminDashboardPage() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">
+      <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-black sm:p-6">
         Loading...
       </div>
     );
@@ -399,7 +406,7 @@ export default function AdminDashboardPage() {
         </div>
       ) : null}
 
-      <section className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">
+      <section className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-black sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="text-lg font-semibold">Gym</div>
@@ -427,7 +434,7 @@ export default function AdminDashboardPage() {
       </section>
 
       <section className="grid items-start gap-6 xl:grid-cols-2">
-        <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">
+        <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-black sm:p-6">
           <div className="text-lg font-semibold">Quick Actions</div>
 
           <div className="mt-4 grid gap-6">
@@ -623,7 +630,7 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">
+        <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-black sm:p-6">
           <div className="text-lg font-semibold">Summary</div>
           <div className="mt-4 grid gap-2 text-sm">
             <div>Members: {members.length}</div>
@@ -651,7 +658,7 @@ export default function AdminDashboardPage() {
       </section>
 
       {isOwner ? (
-        <section className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">
+        <section className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-black sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <div className="text-lg font-semibold">Owner Controls</div>
@@ -745,7 +752,7 @@ export default function AdminDashboardPage() {
       ) : null}
 
       <section className="grid items-start gap-6 xl:grid-cols-3">
-        <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">
+        <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-black sm:p-6">
           <div className="flex items-center justify-between gap-3">
             <div className="text-lg font-semibold">Members</div>
             <div className="text-xs text-zinc-600 dark:text-zinc-400">
@@ -753,7 +760,78 @@ export default function AdminDashboardPage() {
             </div>
           </div>
           <div className="mt-4 max-h-80 overflow-auto rounded-xl border border-black/10 dark:border-white/10">
-            <table className="min-w-[520px] text-sm">
+            <DataMobile>
+              {members.slice(0, 15).map((m) => (
+                <DataRow key={m.id}>
+                  <div className="font-medium">{m.name}</div>
+                  <DataField label="Membership">
+                    {m.membership ? (
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs font-medium">
+                            {m.membership.plan_name ?? "Membership"}
+                          </span>
+                          <Badge variant={tierBadgeVariant(m.membership.tier)}>
+                            {tierLabel(m.membership.tier)}
+                          </Badge>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
+                          <Badge
+                            variant={
+                              m.membership.status === "active"
+                                ? "success"
+                                : m.membership.status === "canceling"
+                                  ? "warning"
+                                  : "neutral"
+                            }
+                          >
+                            {m.membership.status}
+                          </Badge>
+                          <span>{m.membership.days_remaining} days left</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-zinc-600 dark:text-zinc-400">—</span>
+                    )}
+                  </DataField>
+                  {canCancelMembership &&
+                  m.membership &&
+                  (m.membership.status === "active" || m.membership.status === "canceling") &&
+                  m.membership.days_remaining > 0 ? (
+                    <DataActions>
+                      {m.membership.status === "canceling" ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 rounded-lg px-2 text-xs"
+                          type="button"
+                          onClick={() => void undoCancelMembership(m.id)}
+                        >
+                          Undo
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 rounded-lg px-2 text-xs"
+                          type="button"
+                          onClick={() => void cancelMembership(m.id)}
+                        >
+                          Cancel
+                        </Button>
+                      )}
+                    </DataActions>
+                  ) : null}
+                </DataRow>
+              ))}
+              {members.length === 0 ? (
+                <div className="px-4 py-8 text-center text-sm text-zinc-600 dark:text-zinc-400">
+                  No members yet.
+                </div>
+              ) : null}
+            </DataMobile>
+            <DataDesktop>
+            <table className="min-w-full text-sm">
                 <thead className="sticky top-0 bg-zinc-50 text-left text-xs text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
                   <tr>
                     <th className="px-3 py-2 font-medium">Name</th>
@@ -840,10 +918,11 @@ export default function AdminDashboardPage() {
                   ) : null}
                 </tbody>
             </table>
+            </DataDesktop>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">
+        <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-black sm:p-6">
           <div className="flex items-center justify-between gap-3">
             <div className="text-lg font-semibold">Attendance</div>
             <div className="text-xs text-zinc-600 dark:text-zinc-400">
@@ -851,7 +930,37 @@ export default function AdminDashboardPage() {
             </div>
           </div>
           <div className="mt-4 max-h-80 overflow-auto rounded-xl border border-black/10 dark:border-white/10">
-            <table className="min-w-[520px] text-sm">
+            <DataMobile>
+              {attendance.slice(0, 15).map((a) => (
+                <DataRow key={a.id}>
+                  <div className="font-medium">{a.member?.name ?? `Member #${a.member_id}`}</div>
+                  <div className="grid gap-3 pt-1 sm:grid-cols-2">
+                    <DataField label="In">{formatDateTime(a.checked_in_at)}</DataField>
+                    <DataField label="Out">{formatDateTime(a.checked_out_at)}</DataField>
+                  </div>
+                  {a.checked_out_at === null ? (
+                    <DataActions>
+                      <Button
+                        variant="neutral"
+                        size="sm"
+                        className="h-8 rounded-lg px-3 text-xs"
+                        type="button"
+                        onClick={() => void doCheckOut(a.id)}
+                      >
+                        Check-out
+                      </Button>
+                    </DataActions>
+                  ) : null}
+                </DataRow>
+              ))}
+              {attendance.length === 0 ? (
+                <div className="px-4 py-8 text-center text-sm text-zinc-600 dark:text-zinc-400">
+                  No attendance yet.
+                </div>
+              ) : null}
+            </DataMobile>
+            <DataDesktop>
+            <table className="min-w-full text-sm">
                 <thead className="sticky top-0 bg-zinc-50 text-left text-xs text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
                   <tr>
                     <th className="px-3 py-2 font-medium">Member</th>
@@ -901,10 +1010,11 @@ export default function AdminDashboardPage() {
                   ) : null}
                 </tbody>
             </table>
+            </DataDesktop>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">
+        <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-black sm:p-6">
           <div className="flex items-center justify-between gap-3">
             <div className="text-lg font-semibold">Payments</div>
             <div className="text-xs text-zinc-600 dark:text-zinc-400">
@@ -912,7 +1022,41 @@ export default function AdminDashboardPage() {
             </div>
           </div>
           <div className="mt-4 max-h-80 overflow-auto rounded-xl border border-black/10 dark:border-white/10">
-            <table className="min-w-[560px] text-sm">
+            <DataMobile>
+              {payments.slice(0, 15).map((p) => (
+                <DataRow key={p.id}>
+                  <div className="font-medium">{p.member?.name ?? `Member #${p.member_id}`}</div>
+                  <div className="grid gap-3 pt-1 sm:grid-cols-2">
+                    <DataField label="Amount">{formatMoney(p.amount_cents, p.currency)}</DataField>
+                    <DataField label="Method">{p.method.replaceAll("_", " ")}</DataField>
+                    <DataField label="Status">
+                      <Badge variant={p.status === "paid" ? "success" : "warning"}>
+                        {p.status}
+                      </Badge>
+                    </DataField>
+                  </div>
+                  <DataActions>
+                    <Link
+                      className={buttonClassName({
+                        variant: "outline",
+                        size: "sm",
+                        className: "h-8 rounded-lg px-2 text-xs",
+                      })}
+                      href={`/admin/payments/${p.id}/receipt`}
+                    >
+                      Receipt
+                    </Link>
+                  </DataActions>
+                </DataRow>
+              ))}
+              {payments.length === 0 ? (
+                <div className="px-4 py-8 text-center text-sm text-zinc-600 dark:text-zinc-400">
+                  No payments yet.
+                </div>
+              ) : null}
+            </DataMobile>
+            <DataDesktop>
+            <table className="min-w-full text-sm">
                 <thead className="sticky top-0 bg-zinc-50 text-left text-xs text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
                   <tr>
                     <th className="px-3 py-2 font-medium">Member</th>
@@ -969,6 +1113,7 @@ export default function AdminDashboardPage() {
                   ) : null}
                 </tbody>
             </table>
+            </DataDesktop>
           </div>
           <div className="mt-3 text-xs text-zinc-600 dark:text-zinc-400">
             Bank transfers: put transaction id in Reference when recording.

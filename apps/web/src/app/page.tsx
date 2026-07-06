@@ -86,7 +86,7 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-10 sm:py-14">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-14">
         <div className="w-full">
           <div className="grid gap-8 lg:grid-cols-2 lg:items-stretch">
             <section className="relative overflow-hidden rounded-3xl border border-black/10 bg-white p-7 shadow-sm dark:border-white/10 dark:bg-black sm:p-9">

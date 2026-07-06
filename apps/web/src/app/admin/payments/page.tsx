@@ -5,6 +5,14 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 import { formatMoney } from "@/lib/money";
+import {
+  DataActions,
+  DataDesktop,
+  DataField,
+  DataMobile,
+  DataPanel,
+  DataRow,
+} from "@/components/ui/responsive-data";
 
 type PaymentsResponse = {
   data: Array<{
@@ -81,8 +89,48 @@ export default function AdminPaymentsPage() {
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm dark:border-white/10 dark:bg-black">
-        <div className="max-h-[70vh] overflow-auto">
+      <DataPanel>
+        <DataMobile>
+          {data.map((p) => (
+            <DataRow key={p.id}>
+              <div className="font-medium">{p.member?.name ?? `Member #${p.member_id}`}</div>
+              <div className="grid gap-3 pt-1 sm:grid-cols-2">
+                <DataField label="Paid at">{formatDateTime(p.paid_at)}</DataField>
+                <DataField label="Amount">{formatMoney(p.amount_cents, p.currency)}</DataField>
+                <DataField label="Method">
+                  {p.method}
+                  {p.reference ? <div className="mt-1 text-xs">Ref: {p.reference}</div> : null}
+                </DataField>
+                <DataField label="Status">
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-1 text-xs ${
+                      p.status === "paid"
+                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                        : "bg-amber-500/10 text-amber-800 dark:text-amber-200"
+                    }`}
+                  >
+                    {p.status}
+                  </span>
+                </DataField>
+              </div>
+              <DataActions>
+                <Link
+                  className="inline-flex h-9 items-center justify-center rounded-xl border border-black/10 bg-white px-3 text-xs font-medium hover:bg-zinc-50 dark:border-white/10 dark:bg-black dark:hover:bg-white/10"
+                  href={`/admin/payments/${p.id}/receipt`}
+                >
+                  Receipt
+                </Link>
+              </DataActions>
+            </DataRow>
+          ))}
+          {data.length === 0 ? (
+            <div className="px-4 py-10 text-center text-sm text-zinc-600 dark:text-zinc-400">
+              No payments yet.
+            </div>
+          ) : null}
+        </DataMobile>
+
+        <DataDesktop>
           <table className="min-w-full text-sm">
             <thead className="sticky top-0 bg-zinc-50 text-left text-xs text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
               <tr>
@@ -145,8 +193,8 @@ export default function AdminPaymentsPage() {
               ) : null}
             </tbody>
           </table>
-        </div>
-      </div>
+        </DataDesktop>
+      </DataPanel>
     </div>
   );
 }

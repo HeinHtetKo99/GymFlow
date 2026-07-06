@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Search, Users } from "lucide-react";
+import { ArrowLeft, Search, Users } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 import type { PlanType } from "@/lib/plan-schema";
 import { TrainerMemberWorkspace } from "@/components/trainer/trainer-member-workspace";
 import type { MemberProgressData } from "@/components/progress/member-progress-panel";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { tierBadgeVariant, tierLabel } from "@/lib/membership-tier";
@@ -54,6 +55,7 @@ export default function TrainerHomePage() {
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<MemberProgressData | null>(null);
   const [progressLoading, setProgressLoading] = useState(false);
+  const [mobilePanel, setMobilePanel] = useState<"list" | "detail">("list");
 
   const selectedMember = useMemo(() => {
     if (!selectedMemberId) return null;
@@ -78,6 +80,7 @@ export default function TrainerHomePage() {
         if (prev && res.data.some((m) => m.id === prev)) return prev;
         return res.data[0]?.id ?? null;
       });
+      setMobilePanel("list");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load members.");
     } finally {
@@ -191,8 +194,10 @@ export default function TrainerHomePage() {
         <Badge variant="neutral">{members.length} assigned</Badge>
       </div>
 
-      <section className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
-        <Card className="overflow-hidden">
+      <section className="grid gap-4 sm:gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
+        <Card
+          className={`overflow-hidden ${mobilePanel === "detail" ? "hidden xl:block" : ""}`}
+        >
           <div className="border-b border-black/10 px-4 py-3 dark:border-white/10">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
@@ -218,7 +223,10 @@ export default function TrainerHomePage() {
                         ? "bg-emerald-500/10 ring-1 ring-inset ring-emerald-500/20"
                         : "hover:bg-zinc-50 dark:hover:bg-white/5"
                     }`}
-                    onClick={() => setSelectedMemberId(m.id)}
+                    onClick={() => {
+                      setSelectedMemberId(m.id);
+                      setMobilePanel("detail");
+                    }}
                   >
                     <span
                       className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-semibold ${
@@ -259,7 +267,19 @@ export default function TrainerHomePage() {
           </ul>
         </Card>
 
-        <div>
+        <div className={mobilePanel === "list" ? "hidden xl:block" : ""}>
+          <div className="mb-3 xl:hidden">
+            <Button
+              variant="outline"
+              size="sm"
+              type="button"
+              className="h-9"
+              onClick={() => setMobilePanel("list")}
+            >
+              <ArrowLeft className="mr-1.5 h-4 w-4" />
+              Back to members
+            </Button>
+          </div>
           {!selectedMember ? (
             <Card className="flex min-h-[420px] flex-col items-center justify-center p-10 text-center">
               <Users className="h-10 w-10 text-zinc-300 dark:text-zinc-600" />

@@ -23,9 +23,9 @@ export function HeaderBar({
   maxWidth?: string;
 }) {
   return (
-    <header className="sticky top-0 z-10 border-b border-black/10 bg-white/80 px-4 py-4 backdrop-blur dark:border-white/10 dark:bg-black/60 sm:px-6">
-      <div className={`mx-auto flex w-full ${maxWidth} items-center justify-between gap-4`}>
-        <div className="flex min-w-0 items-center gap-3">
+    <header className="sticky top-0 z-10 border-b border-black/10 bg-white/80 px-4 py-3 backdrop-blur dark:border-white/10 dark:bg-black/60 sm:px-6 sm:py-4">
+      <div className={`mx-auto flex w-full ${maxWidth} items-center justify-between gap-2 sm:gap-4`}>
+        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
           <Link
             href={logoHref ?? "/"}
             className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-600 text-white"
@@ -37,7 +37,9 @@ export function HeaderBar({
             <div className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
               {title}
             </div>
-            <div className="truncate text-xs text-zinc-600 dark:text-zinc-400">{subtitle}</div>
+            <div className="hidden truncate text-xs text-zinc-600 sm:block dark:text-zinc-400">
+              {subtitle}
+            </div>
           </div>
         </div>
 

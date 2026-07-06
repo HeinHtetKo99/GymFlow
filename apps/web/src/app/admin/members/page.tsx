@@ -11,6 +11,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import {
+  DataActions,
+  DataDesktop,
+  DataField,
+  DataMobile,
+  DataPanel,
+  DataRow,
+} from "@/components/ui/responsive-data";
 
 type GymResponse = {
   owner_user_id: number | null;
@@ -342,8 +350,122 @@ export default function AdminMembersPage() {
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm dark:border-white/10 dark:bg-black">
-        <div className="max-h-[70vh] overflow-auto">
+      <DataPanel>
+        <DataMobile>
+          {members.map((m) => (
+            <DataRow key={m.id}>
+              <div className="font-medium">{m.name}</div>
+              <div className="text-xs text-zinc-600 dark:text-zinc-400">{m.email ?? "—"}</div>
+              <div className="text-xs text-zinc-600 dark:text-zinc-400">
+                {m.phone ? `Phone: ${m.phone}` : "Phone: —"}
+              </div>
+              <div className="grid gap-3 pt-2 sm:grid-cols-2">
+                <DataField label="Membership">
+                  {m.membership ? (
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-medium">
+                          {m.membership.plan_name ?? "Membership"}
+                        </span>
+                        <Badge variant={tierBadgeVariant(m.membership.tier)}>
+                          {tierLabel(m.membership.tier)}
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-zinc-600 dark:text-zinc-400">
+                        {m.membership.status} • {m.membership.days_remaining} days • ends{" "}
+                        {formatDate(m.membership.ends_at)}
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-zinc-600 dark:text-zinc-400">—</span>
+                  )}
+                </DataField>
+                <DataField label="Account">
+                  {m.user_id ? (
+                    <Badge variant="success">Active (user #{m.user_id})</Badge>
+                  ) : (
+                    <Badge variant="neutral">No login</Badge>
+                  )}
+                </DataField>
+              </div>
+              {canManageMemberAccounts || canBilling ? (
+                <DataActions>
+                  {canBilling && plans.length > 0 ? (
+                    <Button
+                      variant="neutral"
+                      size="sm"
+                      className="h-9 px-3 text-xs"
+                      type="button"
+                      disabled={busy}
+                      onClick={() => setPaymentForMember(m)}
+                    >
+                      Record payment
+                    </Button>
+                  ) : null}
+                  {canManageMemberAccounts ? (
+                    <>
+                      {m.membership && m.membership.days_remaining > 0 ? (
+                        m.membership.status === "canceling" ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-9 px-3 text-xs"
+                            type="button"
+                            disabled={busy}
+                            onClick={() => void undoCancelMembership(m.id)}
+                          >
+                            Undo cancel
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-9 px-3 text-xs"
+                            type="button"
+                            disabled={busy}
+                            onClick={() => void cancelMembership(m.id)}
+                          >
+                            Cancel membership
+                          </Button>
+                        )
+                      ) : null}
+                      {m.user_id ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-9 px-3 text-xs"
+                          type="button"
+                          disabled={busy}
+                          onClick={() => void deleteAccount(m.user_id!)}
+                        >
+                          Delete account
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="neutral"
+                          size="sm"
+                          className="h-9 px-3 text-xs"
+                          type="button"
+                          disabled={busy}
+                          onClick={() => openCreate(m)}
+                        >
+                          Create login
+                        </Button>
+                      )}
+                    </>
+                  ) : null}
+                </DataActions>
+              ) : null}
+            </DataRow>
+          ))}
+          {members.length === 0 ? (
+            <div className="px-4 py-10 text-center text-sm text-zinc-600 dark:text-zinc-400">
+              No members yet.
+            </div>
+          ) : null}
+        </DataMobile>
+
+        <DataDesktop>
           <table className="min-w-full text-sm">
             <thead className="sticky top-0 bg-zinc-50 text-left text-xs text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
               <tr>
@@ -482,8 +604,8 @@ export default function AdminMembersPage() {
               ) : null}
             </tbody>
           </table>
-        </div>
-      </div>
+        </DataDesktop>
+      </DataPanel>
 
       {paymentForMember ? (
         <RecordMembershipModal

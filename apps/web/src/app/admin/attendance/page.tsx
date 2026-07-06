@@ -3,6 +3,13 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { getToken } from "@/lib/auth";
+import {
+  DataDesktop,
+  DataField,
+  DataMobile,
+  DataPanel,
+  DataRow,
+} from "@/components/ui/responsive-data";
 
 type AttendanceListResponse = {
   data: Array<{
@@ -77,8 +84,25 @@ export default function AdminAttendancePage() {
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm dark:border-white/10 dark:bg-black">
-        <div className="max-h-[70vh] overflow-auto">
+      <DataPanel>
+        <DataMobile>
+          {data.map((a) => (
+            <DataRow key={a.id}>
+              <div className="font-medium">{a.member?.name ?? `Member #${a.member_id}`}</div>
+              <div className="grid gap-3 pt-1 sm:grid-cols-2">
+                <DataField label="Check-in">{formatDateTime(a.checked_in_at)}</DataField>
+                <DataField label="Check-out">{formatDateTime(a.checked_out_at)}</DataField>
+              </div>
+            </DataRow>
+          ))}
+          {data.length === 0 ? (
+            <div className="px-4 py-10 text-center text-sm text-zinc-600 dark:text-zinc-400">
+              No attendance records.
+            </div>
+          ) : null}
+        </DataMobile>
+
+        <DataDesktop>
           <table className="min-w-full text-sm">
             <thead className="sticky top-0 bg-zinc-50 text-left text-xs text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
               <tr>
@@ -113,8 +137,8 @@ export default function AdminAttendancePage() {
               ) : null}
             </tbody>
           </table>
-        </div>
-      </div>
+        </DataDesktop>
+      </DataPanel>
     </div>
   );
 }

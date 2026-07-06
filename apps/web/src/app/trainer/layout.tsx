@@ -48,7 +48,7 @@ export default function TrainerLayout({
         maxWidth="max-w-7xl"
       />
 
-      <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-8">{children}</main>
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-4 sm:px-6 sm:py-8">{children}</main>
     </div>
   );
 }

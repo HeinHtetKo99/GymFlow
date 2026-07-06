@@ -135,33 +135,31 @@ export default function AdminLayout({
         logoHref="/admin/dashboard"
         maxWidth="max-w-screen-2xl"
       />
-      <div className="mx-auto w-full max-w-screen-2xl px-4 pt-4 sm:px-6">
-        <nav className="lg:hidden">
-          <div className="-mx-4 overflow-x-auto px-4 sm:-mx-6 sm:px-6">
-            <div className="flex gap-2 whitespace-nowrap pb-2">
-              {navItems.map((item) => {
-                const active = activeHref === item.href;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`inline-flex h-9 items-center gap-2 rounded-full border px-3 text-sm font-medium ${
-                      active
-                        ? "border-emerald-600 bg-emerald-600 text-white"
-                        : "border-black/10 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-white/10 dark:bg-black dark:text-zinc-200 dark:hover:bg-white/10"
-                    }`}
-                  >
-                    <item.Icon className="h-4 w-4 opacity-80" />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </div>
+      <nav className="border-b border-black/10 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-black/60 lg:hidden">
+        <div className="mx-auto w-full max-w-screen-2xl">
+          <div className="flex gap-2 overflow-x-auto overscroll-x-contain px-4 py-2.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:px-6 [&::-webkit-scrollbar]:hidden">
+            {navItems.map((item) => {
+              const active = activeHref === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-2 text-sm font-medium whitespace-nowrap ${
+                    active
+                      ? "border-emerald-600 bg-emerald-600 text-white"
+                      : "border-black/10 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-white/10 dark:bg-black dark:text-zinc-200 dark:hover:bg-white/10"
+                  }`}
+                >
+                  <item.Icon className="h-4 w-4 shrink-0 opacity-80" />
+                  {item.label}
+                </Link>
+              );
+            })}
           </div>
-        </nav>
-      </div>
+        </div>
+      </nav>
 
-      <div className="mx-auto flex w-full max-w-screen-2xl flex-1 gap-6 px-4 py-4 sm:px-6 sm:py-8">
+      <div className="mx-auto flex w-full max-w-screen-2xl flex-1 gap-4 px-4 py-4 sm:gap-6 sm:px-6 sm:py-8">
         <aside className="hidden w-60 shrink-0 lg:block">
           <nav className="rounded-2xl border border-black/10 bg-white/80 p-2 shadow-sm backdrop-blur dark:border-white/10 dark:bg-black/60">
             {navItems.map((item) => {

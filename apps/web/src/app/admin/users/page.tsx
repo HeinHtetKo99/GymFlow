@@ -7,6 +7,14 @@ import { isOwnerUser, roleLabel } from "@/lib/roles";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import {
+  DataActions,
+  DataDesktop,
+  DataField,
+  DataMobile,
+  DataPanel,
+  DataRow,
+} from "@/components/ui/responsive-data";
 
 type GymResponse = {
   owner_user_id: number | null;
@@ -209,8 +217,70 @@ export default function AdminUsersPage() {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm dark:border-white/10 dark:bg-black">
-        <div className="max-h-[70vh] overflow-auto">
+      <DataPanel>
+        <DataMobile>
+          {users.map((u) => {
+            const ownerUser = isOwnerUser(u.id, gym?.owner_user_id ?? null);
+            const isSelf = me?.id === u.id;
+            const canOwnerManage = isOwner && !ownerUser;
+            const canCashierDelete = me?.role === "cashier" && u.role === "member" && !isSelf;
+            const canDelete = (canOwnerManage && !isSelf) || canCashierDelete;
+            const canRoleChange = canOwnerManage && !isSelf;
+
+            return (
+              <DataRow key={u.id}>
+                <div className="font-medium">
+                  {u.name}
+                  {ownerUser ? (
+                    <span className="ml-2 inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-700 dark:text-emerald-300">
+                      Owner
+                    </span>
+                  ) : null}
+                </div>
+                <div className="text-xs text-zinc-600 dark:text-zinc-400">
+                  {u.email} • #{u.id}
+                </div>
+                <DataField label="Role">
+                  {canRoleChange ? (
+                    <select
+                      className="h-9 w-full rounded-xl border border-black/10 bg-white px-3 text-sm text-zinc-900 outline-none ring-offset-2 focus:ring-2 focus:ring-emerald-500/40 dark:border-white/10 dark:bg-black dark:text-zinc-50 dark:ring-offset-black"
+                      value={u.role}
+                      disabled={busy}
+                      onChange={(e) => void updateRole(u.id, e.target.value)}
+                    >
+                      <option value="member">{roleLabel("member")}</option>
+                      <option value="trainer">{roleLabel("trainer")}</option>
+                      <option value="cashier">{roleLabel("cashier")}</option>
+                    </select>
+                  ) : (
+                    <span className="inline-flex items-center rounded-full bg-zinc-900/5 px-2 py-1 text-xs text-zinc-700 dark:bg-white/10 dark:text-zinc-200">
+                      {roleLabel(u.role)}
+                    </span>
+                  )}
+                </DataField>
+                {canDelete ? (
+                  <DataActions>
+                    <button
+                      className="inline-flex h-9 items-center justify-center rounded-xl border border-black/10 bg-white px-3 text-xs font-medium hover:bg-zinc-50 disabled:opacity-50 dark:border-white/10 dark:bg-black dark:hover:bg-white/10"
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void deleteUser(u.id)}
+                    >
+                      Delete
+                    </button>
+                  </DataActions>
+                ) : null}
+              </DataRow>
+            );
+          })}
+          {users.length === 0 ? (
+            <div className="px-4 py-10 text-center text-sm text-zinc-600 dark:text-zinc-400">
+              No users yet.
+            </div>
+          ) : null}
+        </DataMobile>
+
+        <DataDesktop>
           <table className="min-w-full text-sm">
             <thead className="sticky top-0 bg-zinc-50 text-left text-xs text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
               <tr>
@@ -288,8 +358,8 @@ export default function AdminUsersPage() {
               ) : null}
             </tbody>
           </table>
-        </div>
-      </div>
+        </DataDesktop>
+      </DataPanel>
     </div>
   );
 }

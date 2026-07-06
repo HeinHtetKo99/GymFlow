@@ -157,7 +157,7 @@ export function TrainerMemberWorkspace({
   return (
     <div className="space-y-4">
       <Card className="overflow-hidden">
-        <div className="bg-gradient-to-br from-emerald-600/10 via-transparent to-zinc-500/5 px-6 py-5 dark:from-emerald-500/15">
+        <div className="bg-gradient-to-br from-emerald-600/10 via-transparent to-zinc-500/5 px-4 py-4 sm:px-6 sm:py-5 dark:from-emerald-500/15">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex items-start gap-4">
               <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-600 text-lg font-semibold text-white shadow-lg shadow-emerald-600/20">
@@ -188,7 +188,7 @@ export function TrainerMemberWorkspace({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-3">
               <div className="rounded-xl border border-black/10 bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-black/40">
                 <div className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">Weight (30d)</div>
                 <div className="mt-0.5 text-sm font-semibold">
@@ -276,7 +276,7 @@ export function TrainerMemberWorkspace({
               ) : null}
               {typeTemplates.length > 0 ? (
                 <Select
-                  className="h-9 min-w-[10rem] text-xs"
+                  className="h-9 w-full min-w-0 text-xs sm:min-w-[10rem] sm:w-auto"
                   disabled={busy}
                   defaultValue=""
                   onChange={(e) => {

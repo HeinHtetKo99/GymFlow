@@ -555,7 +555,7 @@ export default function AdminOnboardingPage() {
                   <option value="gold">Gold — personal trainer</option>
                 </Select>
               </label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <label className="grid gap-2 text-sm">
                   <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Duration (days)</span>
                   <Input
@@ -616,7 +616,7 @@ export default function AdminOnboardingPage() {
                         }
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <label className="grid gap-2 text-sm">
                         <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
                           Duration (days)

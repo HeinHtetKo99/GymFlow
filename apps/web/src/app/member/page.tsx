@@ -11,6 +11,13 @@ import {
 } from "@/components/progress/member-progress-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DataDesktop,
+  DataField,
+  DataMobile,
+  DataPanel,
+  DataRow,
+} from "@/components/ui/responsive-data";
 import { includesPersonalTraining, tierBadgeVariant, tierLabel } from "@/lib/membership-tier";
 import { formatMoney } from "@/lib/money";
 
@@ -239,7 +246,7 @@ export default function MemberDashboardPage() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">
+      <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-black sm:p-6">
         Loading...
       </div>
     );
@@ -254,7 +261,7 @@ export default function MemberDashboardPage() {
       ) : null}
 
       <section className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">
+        <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-black sm:p-6">
           <div className="text-lg font-semibold">My Profile</div>
           <div className="mt-4 grid gap-3 text-sm">
             <div className="grid gap-1">
@@ -289,7 +296,7 @@ export default function MemberDashboardPage() {
         </div>
 
         {ptEligible ? (
-        <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">
+        <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-black sm:p-6">
           <div className="text-lg font-semibold">My Trainer</div>
           <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
             Current:{" "}
@@ -412,7 +419,7 @@ export default function MemberDashboardPage() {
         )}
       </section>
 
-      <section className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">
+      <section className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-black sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="text-lg font-semibold">My Membership</div>
@@ -424,7 +431,7 @@ export default function MemberDashboardPage() {
                 : "No active membership"}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {member?.membership ? (
               <>
                 <Badge
@@ -487,13 +494,13 @@ export default function MemberDashboardPage() {
       ) : null}
 
       {ptActive ? (
-      <section className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">
+      <section className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-black sm:p-6">
         <MemberProgressPanel progress={progress} loading={loading} />
       </section>
       ) : null}
 
       {ptActive ? (
-      <section className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">
+      <section className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-black sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="text-lg font-semibold">My Plans</div>
@@ -548,33 +555,22 @@ export default function MemberDashboardPage() {
       ) : null}
 
       <section className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">
+        <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-black sm:p-6">
           <div className="flex items-center justify-between gap-3">
             <div className="text-lg font-semibold">My Attendance</div>
             <div className="text-xs text-zinc-600 dark:text-zinc-400">
               {attendance.length}
             </div>
           </div>
-          <div className="mt-4 overflow-hidden rounded-xl border border-black/10 dark:border-white/10">
-            <div className="max-h-96 overflow-auto">
-              <table className="min-w-full text-sm">
-                <thead className="sticky top-0 bg-zinc-50 text-left text-xs text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
-                  <tr>
-                    <th className="px-3 py-2 font-medium">Check-in</th>
-                    <th className="px-3 py-2 font-medium">Check-out</th>
-                    <th className="px-3 py-2 font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-black/10 dark:divide-white/10">
-                  {attendance.slice(0, 20).map((a) => (
-                    <tr key={a.id} className="hover:bg-zinc-50/80 dark:hover:bg-white/5">
-                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-200">
-                        {formatDateTime(a.checked_in_at)}
-                      </td>
-                      <td className="px-3 py-2 text-zinc-600 dark:text-zinc-400">
-                        {formatDateTime(a.checked_out_at)}
-                      </td>
-                      <td className="px-3 py-2">
+          <div className="mt-4">
+            <DataPanel scrollClassName="max-h-96">
+              <DataMobile>
+                {attendance.slice(0, 20).map((a) => (
+                  <DataRow key={a.id}>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <DataField label="Check-in">{formatDateTime(a.checked_in_at)}</DataField>
+                      <DataField label="Check-out">{formatDateTime(a.checked_out_at)}</DataField>
+                      <DataField label="Status">
                         <span
                           className={`inline-flex items-center rounded-full px-2 py-1 text-xs ${
                             a.checked_out_at
@@ -584,61 +580,84 @@ export default function MemberDashboardPage() {
                         >
                           {a.checked_out_at ? "completed" : "open"}
                         </span>
-                      </td>
-                    </tr>
-                  ))}
-                  {attendance.length === 0 ? (
+                      </DataField>
+                    </div>
+                  </DataRow>
+                ))}
+                {attendance.length === 0 ? (
+                  <div className="px-4 py-8 text-center text-sm text-zinc-600 dark:text-zinc-400">
+                    No attendance records yet.
+                  </div>
+                ) : null}
+              </DataMobile>
+              <DataDesktop>
+                <table className="min-w-full text-sm">
+                  <thead className="sticky top-0 bg-zinc-50 text-left text-xs text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
                     <tr>
-                      <td
-                        className="px-3 py-8 text-center text-zinc-600 dark:text-zinc-400"
-                        colSpan={3}
-                      >
-                        No attendance records yet.
-                      </td>
+                      <th className="px-3 py-2 font-medium">Check-in</th>
+                      <th className="px-3 py-2 font-medium">Check-out</th>
+                      <th className="px-3 py-2 font-medium">Status</th>
                     </tr>
-                  ) : null}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-black/10 dark:divide-white/10">
+                    {attendance.slice(0, 20).map((a) => (
+                      <tr key={a.id} className="hover:bg-zinc-50/80 dark:hover:bg-white/5">
+                        <td className="px-3 py-2 text-zinc-700 dark:text-zinc-200">
+                          {formatDateTime(a.checked_in_at)}
+                        </td>
+                        <td className="px-3 py-2 text-zinc-600 dark:text-zinc-400">
+                          {formatDateTime(a.checked_out_at)}
+                        </td>
+                        <td className="px-3 py-2">
+                          <span
+                            className={`inline-flex items-center rounded-full px-2 py-1 text-xs ${
+                              a.checked_out_at
+                                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                                : "bg-amber-500/10 text-amber-800 dark:text-amber-200"
+                            }`}
+                          >
+                            {a.checked_out_at ? "completed" : "open"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                    {attendance.length === 0 ? (
+                      <tr>
+                        <td
+                          className="px-3 py-8 text-center text-zinc-600 dark:text-zinc-400"
+                          colSpan={3}
+                        >
+                          No attendance records yet.
+                        </td>
+                      </tr>
+                    ) : null}
+                  </tbody>
+                </table>
+              </DataDesktop>
+            </DataPanel>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-black">
+        <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-black sm:p-6">
           <div className="flex items-center justify-between gap-3">
             <div className="text-lg font-semibold">My Payments</div>
             <div className="text-xs text-zinc-600 dark:text-zinc-400">
               {payments.length}
             </div>
           </div>
-          <div className="mt-4 overflow-hidden rounded-xl border border-black/10 dark:border-white/10">
-            <div className="max-h-96 overflow-auto">
-              <table className="min-w-full text-sm">
-                <thead className="sticky top-0 bg-zinc-50 text-left text-xs text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
-                  <tr>
-                    <th className="px-3 py-2 font-medium">Paid at</th>
-                    <th className="px-3 py-2 font-medium">Amount</th>
-                    <th className="px-3 py-2 font-medium">Method</th>
-                    <th className="px-3 py-2 font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-black/10 dark:divide-white/10">
-                  {payments.slice(0, 20).map((p) => (
-                    <tr key={p.id} className="hover:bg-zinc-50/80 dark:hover:bg-white/5">
-                      <td className="px-3 py-2 text-zinc-600 dark:text-zinc-400">
-                        {formatDateTime(p.paid_at)}
-                      </td>
-                      <td className="px-3 py-2 font-medium">
-                        {formatMoney(p.amount_cents, p.currency)}
-                      </td>
-                      <td className="px-3 py-2 text-zinc-600 dark:text-zinc-400">
+          <div className="mt-4">
+            <DataPanel scrollClassName="max-h-96">
+              <DataMobile>
+                {payments.slice(0, 20).map((p) => (
+                  <DataRow key={p.id}>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <DataField label="Paid at">{formatDateTime(p.paid_at)}</DataField>
+                      <DataField label="Amount">{formatMoney(p.amount_cents, p.currency)}</DataField>
+                      <DataField label="Method">
                         {p.method}
-                        {p.reference ? (
-                          <div className="mt-1 text-xs">
-                            Ref: {p.reference}
-                          </div>
-                        ) : null}
-                      </td>
-                      <td className="px-3 py-2">
+                        {p.reference ? <div className="mt-1 text-xs">Ref: {p.reference}</div> : null}
+                      </DataField>
+                      <DataField label="Status">
                         <span
                           className={`inline-flex items-center rounded-full px-2 py-1 text-xs ${
                             p.status === "paid"
@@ -648,22 +667,70 @@ export default function MemberDashboardPage() {
                         >
                           {p.status}
                         </span>
-                      </td>
-                    </tr>
-                  ))}
-                  {payments.length === 0 ? (
+                      </DataField>
+                    </div>
+                  </DataRow>
+                ))}
+                {payments.length === 0 ? (
+                  <div className="px-4 py-8 text-center text-sm text-zinc-600 dark:text-zinc-400">
+                    No payments recorded yet.
+                  </div>
+                ) : null}
+              </DataMobile>
+              <DataDesktop>
+                <table className="min-w-full text-sm">
+                  <thead className="sticky top-0 bg-zinc-50 text-left text-xs text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
                     <tr>
-                      <td
-                        className="px-3 py-8 text-center text-zinc-600 dark:text-zinc-400"
-                        colSpan={4}
-                      >
-                        No payments recorded yet.
-                      </td>
+                      <th className="px-3 py-2 font-medium">Paid at</th>
+                      <th className="px-3 py-2 font-medium">Amount</th>
+                      <th className="px-3 py-2 font-medium">Method</th>
+                      <th className="px-3 py-2 font-medium">Status</th>
                     </tr>
-                  ) : null}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-black/10 dark:divide-white/10">
+                    {payments.slice(0, 20).map((p) => (
+                      <tr key={p.id} className="hover:bg-zinc-50/80 dark:hover:bg-white/5">
+                        <td className="px-3 py-2 text-zinc-600 dark:text-zinc-400">
+                          {formatDateTime(p.paid_at)}
+                        </td>
+                        <td className="px-3 py-2 font-medium">
+                          {formatMoney(p.amount_cents, p.currency)}
+                        </td>
+                        <td className="px-3 py-2 text-zinc-600 dark:text-zinc-400">
+                          {p.method}
+                          {p.reference ? (
+                            <div className="mt-1 text-xs">
+                              Ref: {p.reference}
+                            </div>
+                          ) : null}
+                        </td>
+                        <td className="px-3 py-2">
+                          <span
+                            className={`inline-flex items-center rounded-full px-2 py-1 text-xs ${
+                              p.status === "paid"
+                                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                                : "bg-amber-500/10 text-amber-800 dark:text-amber-200"
+                            }`}
+                          >
+                            {p.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                    {payments.length === 0 ? (
+                      <tr>
+                        <td
+                          className="px-3 py-8 text-center text-zinc-600 dark:text-zinc-400"
+                          colSpan={4}
+                        >
+                          No payments recorded yet.
+                        </td>
+                      </tr>
+                    ) : null}
+                  </tbody>
+                </table>
+              </DataDesktop>
+            </DataPanel>
           </div>
         </div>
       </section>
