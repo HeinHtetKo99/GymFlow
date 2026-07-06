@@ -1,8 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #022c22;
+  --foreground: #fafafa;
+  --app-bg-top: #022c22;
+  --app-bg-mid: #09090b;
+  --app-bg-bottom: #042f2e;
 }
 
 @theme inline {
@@ -12,13 +15,29 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  height: 100%;
+  overscroll-behavior-y: none;
+  background-color: var(--app-bg-top);
+  color-scheme: dark;
 }
 
 body {
+  min-height: 100dvh;
+  overscroll-behavior-y: none;
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  background-color: transparent;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    180deg,
+    var(--app-bg-top) 0%,
+    var(--app-bg-mid) 45%,
+    var(--app-bg-bottom) 100%
+  );
 }
