@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { Activity, Dumbbell, ShieldCheck, Sparkles } from "lucide-react";
+import { Activity, ChevronRight, Dumbbell, ShieldCheck, Sparkles } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { getGymCode, setGymCode, setToken, setUser, type AuthUser } from "@/lib/auth";
+import { SHOW_DEMO_ACCOUNTS } from "@/lib/config";
+import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "@/lib/demo-accounts";
 import { buttonClassName } from "@/components/ui/button-classes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +23,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [demoLoggingIn, setDemoLoggingIn] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const canSubmit = useMemo(() => {
@@ -32,28 +35,45 @@ export default function LoginPage() {
     );
   }, [gymCode, email, password, submitting]);
 
+  async function performLogin(trimmedGym: string, trimmedEmail: string, trimmedPassword: string) {
+    setGymCode(trimmedGym);
+    const res = await apiFetch<LoginResponse>("/api/v1/auth/login", {
+      method: "POST",
+      gymCode: trimmedGym,
+      body: JSON.stringify({ email: trimmedEmail, password: trimmedPassword }),
+    });
+    setToken(res.token);
+    setUser(res.user);
+    router.push(
+      res.user.role === "member" ? "/member" : res.user.role === "trainer" ? "/trainer" : "/admin",
+    );
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
     try {
-      const trimmedGym = gymCode.trim();
-      const trimmedEmail = email.trim();
-      setGymCode(trimmedGym);
-      const res = await apiFetch<LoginResponse>("/api/v1/auth/login", {
-        method: "POST",
-        gymCode: trimmedGym,
-        body: JSON.stringify({ email: trimmedEmail, password }),
-      });
-      setToken(res.token);
-      setUser(res.user);
-      router.push(
-        res.user.role === "member" ? "/member" : res.user.role === "trainer" ? "/trainer" : "/admin",
-      );
+      await performLogin(gymCode.trim(), email.trim(), password);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed.");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function onDemoLogin(account: (typeof DEMO_ACCOUNTS)[number]) {
+    setDemoLoggingIn(account.id);
+    setError(null);
+    setGymCodeState(account.gymCode);
+    setEmail(account.email);
+    setPassword(account.password);
+    try {
+      await performLogin(account.gymCode, account.email, account.password);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed.");
+    } finally {
+      setDemoLoggingIn(null);
     }
   }
 
@@ -174,10 +194,66 @@ export default function LoginPage() {
                   </div>
                 ) : null}
 
-                <Button fullWidth disabled={!canSubmit} type="submit">
+                <Button fullWidth disabled={!canSubmit || demoLoggingIn !== null} type="submit">
                   {submitting ? "Logging in..." : "Login"}
                 </Button>
               </form>
+
+              {SHOW_DEMO_ACCOUNTS ? (
+                <div className="mt-6 rounded-2xl border border-emerald-500/20 bg-zinc-50 p-4 dark:border-emerald-500/30 dark:bg-white/5">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    <div className="text-sm font-medium">Try the demo</div>
+                  </div>
+                  <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
+                    Click a role below to sign in instantly. No need to type credentials.
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                    Gym code{" "}
+                    <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                      {DEMO_ACCOUNTS[0]?.gymCode}
+                    </span>
+                    {" · "}
+                    Password{" "}
+                    <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                      {DEMO_PASSWORD}
+                    </span>
+                  </p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {DEMO_ACCOUNTS.map((account) => {
+                      const busy = demoLoggingIn === account.id;
+                      const disabled = submitting || (demoLoggingIn !== null && !busy);
+
+                      return (
+                        <button
+                          key={account.id}
+                          type="button"
+                          disabled={disabled}
+                          onClick={() => void onDemoLogin(account)}
+                          className="group cursor-pointer rounded-xl border border-black/10 bg-white p-3 text-left transition-colors hover:border-emerald-500/30 hover:bg-emerald-500/5 disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-50 dark:border-white/10 dark:bg-black dark:hover:border-emerald-500/40 dark:hover:bg-emerald-500/10"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-sm font-medium">{account.label}</span>
+                            {busy ? (
+                              <span className="text-xs text-emerald-600 dark:text-emerald-400">
+                                Logging in...
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-0.5 text-xs font-medium text-emerald-700 group-hover:text-emerald-600 dark:text-emerald-300 dark:group-hover:text-emerald-200">
+                                Click to test
+                                <ChevronRight className="h-3.5 w-3.5" />
+                              </span>
+                            )}
+                          </div>
+                          <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                            {account.description}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
 
               <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm">
                 <div className="text-zinc-600 dark:text-zinc-400">

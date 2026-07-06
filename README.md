@@ -86,6 +86,12 @@ NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
 NEXT_PUBLIC_TENANT_SLUG=gymflow
 ```
 
+Optional — show one-click demo logins on `/login` (recommended for portfolio demos):
+
+```env
+NEXT_PUBLIC_SHOW_DEMO_ACCOUNTS=true
+```
+
 `NEXT_PUBLIC_TENANT_SLUG` is the default gym code used by the web app when calling the API (sent as the `X-Gym` header).
 
 ## Demo Data / Reset DB
